@@ -31,18 +31,18 @@ def meta_treasury_deploy():
 
 
 def request_creator_funds(creator_wallet, amount):
-    meta_treasury = MetaTreasury[-1]  # get the most recent deployed meta treasury
+    meta_treasury = get_contract()  # get the most recent deployed meta treasury
     meta_treasury.requestFunds(amount, {"from": creator_wallet})
     # do we need something else here? 
 
 
 def deposit_user_funds(user_wallet, amount):
-    meta_treasury = MetaTreasury[-1]  # get the most recent deployed meta treasury
+    meta_treasury = get_contract()  # get the most recent deployed meta treasury
     meta_treasury.depositFunds(amount, {"from": user_wallet})
     # do we need somethng else here?
 
 
 def voting_projects_protocol(user_wallet, creator_wallet):
-    meta_treasury = MetaTreasury[-1]  # get the most recent deployed meta treasury
+    meta_treasury = get_contract()  # get the most recent deployed meta treasury
     meta_treasury.getVoteFunding(creator_wallet, {"from": user_wallet})
     # do we need something else here?
