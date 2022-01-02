@@ -24,6 +24,7 @@ contract MetaTreasury is Ownable {
         stageToken = IERC20(_dAppTokenAddress);
         minValueProtocol = 10;
         inVotePeriod = false;
+        votingHasOccurred = false;
     }
     
     function depositFunds(uint256 _amount) public {
@@ -43,11 +44,11 @@ contract MetaTreasury is Ownable {
         creators.push(msg.sender);
     }
 
-    function treasuryContainsUser(address wallet) public returns(bool) {
+    function treasuryContainsUser(address wallet) public view returns(bool) {
         return stageHoldersTreasury[wallet] > 0;
     }
 
-    function creatorHasRequestFunds(address wallet) public returns(bool) {
+    function creatorHasRequestFunds(address wallet) public view returns(bool) {
         return creatorsRequestedFunds[wallet] > 0;
     }
     
@@ -90,15 +91,33 @@ contract MetaTreasury is Ownable {
     }
 
     function fundCreators() payable isFundable public {
+        require(votingHasOccurred, "Vote period is not yet finished");
         computeCreatorTotalFunds();
         address creator;
         for (uint256 creatorIndex; creatorIndex < creators.length; creatorIndex++) {
             creator = creators[creatorIndex];
-            if (totalFundsForCreators[creator] > 0) {
+            if (totalFundsForCreators[creator] > creatorsRequestedFunds[creator]) {
                 stageToken.transfer(creator, totalFundsForCreators[creator]);
             }
         }
-        votingHasOccurred = false; // at the end 
+        this.votationHasEnded();
+    }
+
+    function votationHasEnded() public {
+        address creator;
+        address user;
+        votingHasOccurred = false;
+        inVotePeriod = false;
+        for (uint256 creatorIndex; creatorIndex < creators.length; creatorIndex++) {
+            creator = creators[creatorIndex];
+            delete creatorObtainedRequestedFunds[creator];
+            delete creatorsRequestedFunds[creator];
+            delete totalFundsForCreators[creator];
+        }
+        for (uint256 userIndex; userIndex < stageHolders.length; userIndex++) {
+            user = stageHolders[userIndex];
+            delete stageHoldersTreasury[user];
+            delete votingMap[user];
+        }
     }
 }
-
