@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
-contract  is Ownable {
+contract CrowdFundContract is Ownable {
     
     bool public startVotation;
     bool public endVotation;
