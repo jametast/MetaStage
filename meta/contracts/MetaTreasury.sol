@@ -4,13 +4,16 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/interfaces/AggregatorV3interface.sol";
 
 
-contract  is Ownable {
+contract MetaTreasury is Ownable {
     
     bool public startVotation;
     bool public endVotation;
     uint256 public minFundValue;
+    uint256 public start;
+    uint256 public end;
     mapping(address => bool) public usersMapping;
     mapping(address => bool) public creatorsMapping;
     mapping(address => bool) public allowedFundableTokens;
@@ -26,7 +29,8 @@ contract  is Ownable {
         start = False;
         end = False;
         minFundValue = _minFundValue;
-        for (address token of _allowedFundableTokens) {
+        for (uint256 index; index < _allowedFundableTokens.length(); index++) {
+            address token = _allowedFundableTokens[index];
             allowedFundableTokens[token] = true;
         }
     }
@@ -54,7 +58,7 @@ contract  is Ownable {
         requireVotationTimeline();
         require(_amount > 0, "Requested amount must be bigger than zero");
         require(!creatorsMapping[msg.sender], "Creator already requested funds for project");
-        require(isCreatorElligible(msg.sender), "Creator is not elligible to request funds);
+        require(isCreatorElligible(msg.sender), "Creator is not elligible to request funds");
         creatorsMapping[msg.sender] = true;
         creatorVotesMapping[_wallet].push(msg.sender);
     }
@@ -100,7 +104,7 @@ contract  is Ownable {
         for (uint256 i = 0; i < fundsByUsers.length; i++) {
             address user = fundsByUsers[i];
             address token = userAllowedTokenMapping[user];
-            token.transferFrom(address(this), _wallet, usersLockedFundsMapping[user])
+            token.transferFrom(address(this), _wallet, usersLockedFundsMapping[user]);
         }
     }
 
