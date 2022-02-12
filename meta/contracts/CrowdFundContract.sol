@@ -148,11 +148,11 @@ contract CrowdFundContract is Ownable {
     // a user is allowed to lock a certain amount of available ERC20 tokens 
     // and associate such funds to a given creator. This amount is locked into
     // the current contract until crowd fund is over. 
-    function fund(uint256 _amount, address _tokenFund, address _wallet) public {
+    function fund(uint256 _amount, address _tokenFundAddress, address _wallet) public {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestmap && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
         // given ERC20 address, in which user wants to lock his funds (say ETH, USDT, LINK, ...), is allowed by the protocol
-        require(isTokenAllowed(_toFundAddress), "Locked funds not allowed in this token");
+        require(isTokenAllowed(_tokenFundAddress), "Locked funds not allowed in this token");
         // require that amount is bigger than the min value required by our protocol
         (uint256, uint256) (tokenPrice, decimals) = getTokenPrice(_tokenFund);
         uint256 fundValue = tokenPrice * _amount;
@@ -163,14 +163,14 @@ contract CrowdFundContract is Ownable {
         require(isCreatorElligible(_wallet), "Creator's public address is not elligible");
 
         // Encapsulate data into a User structure
-        user = User(msg.sender, _amount, _tokenFund, _wallet);
+        user = User(msg.sender, _amount, _tokenFundAddress, _wallet);
         // users mapping is updated with the public key interacting with the contract
         usersMapping[msg.sender] = true;
         // address to user mapping is updated
         addressToUserMapping[msg.sender] = user;
         // Lock funds from user into the current smart contract
         // These funds will be then distributed to the chosen creator, given that creator obtained enough funds
-        _tokenFund.transferFrom(msg.sender, address(this), _amount);
+        _tokenFundAddress.transferFrom(msg.sender, address(this), _amount);
         // user data is pushed to usersArray
         usersArray.push(user);
 
@@ -249,7 +249,7 @@ contract CrowdFundContract is Ownable {
         require(isElligibleCreatorMapping[_wallet], "Creator is not elligible");
         uint256 totalFunds = computeTotalFunds(_wallet);
         uint256 requestedFunds = computeRequestedFunds(_wallet);
-        return requestedFunds > totalFunds;
+        return requestedFunds < totalFunds;
     }
     
     // implements logic to fund creators if these are elligible and
