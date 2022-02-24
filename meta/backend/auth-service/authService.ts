@@ -30,4 +30,10 @@ const fetchData = () => {
 app.listen(port, () => {
     console.log(`Server listening at ${port}`);
     fetchData();
-})
+}).on("error", (err: any) => {
+    if (err.code === "EADDRINUSE") {
+        console.log("Port is already in use.");
+    } else {
+        console.log("Error: ", err);
+    }
+});

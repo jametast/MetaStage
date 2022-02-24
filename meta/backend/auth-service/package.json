@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf dist && tsc",
     "preserve": "npm run build",
-    "serve": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon -q dist/authService.js\"",
+    "serve": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"cp .env ./dist/.env\" \"nodemon -q dist/authService.js\"",
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node dist/authService.js",
     "test": "echo \"Error: no test specified\" && exit 1"
