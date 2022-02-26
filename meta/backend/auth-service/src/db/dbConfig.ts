@@ -1,4 +1,5 @@
 import AWS from "aws-sdk";
+
 const CONFIG = process.env;
 
 const awsConfig = {
@@ -10,6 +11,7 @@ const awsConfig = {
 
 AWS.config.update(awsConfig);
 
+const client = new AWS.DynamoDB();
 const docClient = new AWS.DynamoDB.DocumentClient();
 
-export default docClient;
+export { client, docClient };

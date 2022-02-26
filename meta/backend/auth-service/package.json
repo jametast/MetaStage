@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/types": "^3.53.0",
     "aws-sdk": "^2.1074.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.0",

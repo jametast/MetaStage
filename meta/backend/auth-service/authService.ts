@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import Server from "./src/index";
 import * as dotenv from "dotenv";
 dotenv.config({ path: __dirname + '/.env' });
-import docClient from "./src/db/dbConfig";
+import { docClient } from "./src/db/dbConfig";
 
 const app: Application = express();
 const server: Server = new Server(app);
