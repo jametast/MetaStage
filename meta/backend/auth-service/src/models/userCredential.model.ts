@@ -7,7 +7,7 @@ let tableName = "user_credentials";
 let params = {
     TableName: tableName,
     KeySchema: [
-        { AttributeName: "publicKey", KeyType: "S"}  //Partition key; TODO - check type of partition key
+        { AttributeName: "publicKey", KeyType: "Hash"}  //Partition key; TODO - check type of partition key
     ],
     AttributeDefinitions: [
         { AttributeName: "publicKey", AttributeType: "S" },
