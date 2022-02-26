@@ -1,8 +1,13 @@
 const fowarderOrigin = 'http://localhost:9010';
 
+
+
 const initialize = () => {
+    // Basic Actions section
     // Click button to connect metamask wallet
     const onBoardButton = document.getElementById('connectButton');
+    const getAccountsButton = document.getElementById('getAccounts');
+    const getAccountsResult = document.getElementById('getAccountsResult');
 
     // Create a check function to see if metamask is connect
     const isMetaMaskInstalled = () => {
@@ -32,7 +37,6 @@ const initialize = () => {
             console.error(error);
         }
     };
-    
 
     const MetaMaskClientCheck = () => {
         // We check if metamask is installed
@@ -45,14 +49,21 @@ const initialize = () => {
             onBoardButton.disabled = false;
         } else {
             // If it is installed we change inner text to 'Connect'
-            onBoardButton.innerText = 'Conect'
+            onBoardButton.innerText = 'Connect'
             // When the button is clicked we call onClickConnect function
             onBoardButton.onclick = onClickConnect;
             // The button is now disabled
             onBoardButton.disabled = false;
         }
     };
-
     MetaMaskClientCheck();
+
+    // Eth_Accounts-getAccountsButton
+    getAccountsButton.addEventListener('click', async () => {
+        // we use eth_accounts because it returns a list of addresses owned by us.
+        const accounts = await ethereum.request({ method: 'eth_accounts' });
+        // We take the first address in the array of addresses and display it
+        getAccountResult.innerHTML = accounts[0] || 'Not able to get accounts'; 
+    })
 }
 window.addEventListener('DOMContentLoaded', initialize);
