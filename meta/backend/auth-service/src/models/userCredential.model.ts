@@ -4,7 +4,7 @@ import { client, docClient } from "../db/dbConfig";
 const createDB = () => {
     let tableName = "user_credentials";
 
-    let params = {
+    let params: any = {
         TableName: tableName,
         KeySchema: [
             { AttributeName: "publicKey", KeyType: "Hash" }  //Partition key; TODO - check type of partition key
@@ -30,6 +30,13 @@ const createDB = () => {
     // });
 
     client.createTable(params).promise().catch(err => console.log(err));
+    docClient.put(params, (err: any, data: any) => {
+        if (data) {
+            console.log(data);
+        } else {
+            console.log(err.toString());
+        }
+    })
 }
 
 export default createDB;

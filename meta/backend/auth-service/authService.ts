@@ -19,21 +19,13 @@ const fetchData = async () => {
             "lastLogIn": "23:03:00",
         }
     };
-
-    await docClient.put(params, (err: any, data: any) => {
-        if (data) {
-            console.log(data);
-        } else {
-            console.log(err.toString());
-        }
-    })
 }
 
 
 app.listen(port, () => {
     console.log(`Server listening at ${port}`);
     createDB();
-    fetchData();
+    // fetchData();
 }).on("error", (err: any) => {
     if (err.code === "EADDRINUSE") {
         console.log("Port is already in use.");
