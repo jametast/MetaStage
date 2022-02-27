@@ -7,12 +7,13 @@ const createDB = () => {
     let params = {
         TableName: tableName,
         KeySchema: [
-            { AttributeName: "publicKey", KeyType: "Hash" }  //Partition key; TODO - check type of partition key
+            { AttributeName: "publicKey", KeyType: "HASH" },
+            { AttributeName: "nonce", KeyType: "RANGE" } //Partition key; TODO - check type of partition key
         ],
         AttributeDefinitions: [
-            { AttributeName: "publicKey", AttributeType: "S" },
+            { AttributeName: "publicKey", AttributeType: "N" },
             { AttributeName: "nonce", AttributeType: "N" },
-            { AttributeName: "lastLogIn", AttributeType: "S" },
+            // { AttributeName: "lastLogIn", AttributeType: "S" },
         ],
         ProvisionedThroughput: {
             ReadCapacityUnits: 10,
@@ -29,7 +30,7 @@ const createDB = () => {
     //     }
     // });
 
-    client.createTable(params).promise().catch(err => console.log(err));
+    client.createTable(params).promise().catch(err => { console.log("-------"); console.log(err) });
 }
 
 export default createDB;
