@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import Server from "./src/index";
 import * as dotenv from "dotenv";
 dotenv.config({ path: __dirname + '/.env' });
-import { docClient } from "./src/db/dbConfig";
+import { client, docClient } from "./src/db/dbConfig";
 import createDB from "./src/models/userCredential.model"
 import { create } from "domain";
 
@@ -19,13 +19,21 @@ const fetchData = async () => {
             "lastLogIn": "23:03:00",
         }
     };
+
+    docClient.put(params, function(err, data) {
+        if (err) {
+            console.log("Error: ", err);
+        } else {
+            console.log("Success", data);
+        }
+    })
 }
 
 
 app.listen(port, () => {
     console.log(`Server listening at ${port}`);
     createDB();
-    // fetchData();
+    fetchData();
 }).on("error", (err: any) => {
     if (err.code === "EADDRINUSE") {
         console.log("Port is already in use.");
