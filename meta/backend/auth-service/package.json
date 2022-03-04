@@ -16,10 +16,13 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/types": "^3.53.0",
+    "@metamask/eth-sig-util": "^4.0.0",
     "aws-sdk": "^2.1074.0",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.0",
+    "ethereumjs-util": "^7.1.4",
     "express": "^4.17.2",
+    "jsonwebtoken": "^8.5.1",
     "rimraf": "^3.0.2"
   },
   "devDependencies": {

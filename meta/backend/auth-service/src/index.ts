@@ -1,10 +1,10 @@
 import { Application, urlencoded, json, Request, Response, NextFunction } from "express";
-// import Routes from "./routes";
+import Routes from "./routes";
 
 export default class Server {
     constructor(app: Application) {
         this.config(app);
-        // new Routes(app);
+        new Routes(app);
     }
 
     public config(app: Application): void {
