@@ -2,7 +2,7 @@ import express, { Application } from "express";
 import Server from "./src/index";
 import * as dotenv from "dotenv";
 dotenv.config({ path: __dirname + '/.env' });
-import { docClient } from "./src/db/dbConfig";
+import { client, docClient } from "./src/db/dbConfig";
 import createDB from "./src/models/userCredential.model"
 
 const app: Application = express();
@@ -19,6 +19,7 @@ const port = process.env.PORT;
 //         }
 //     };
 
+<<<<<<< HEAD
 //     await docClient.put(params, (err: any, data: any) => {
 //         if (data) {
 //             console.log(data);
@@ -27,6 +28,16 @@ const port = process.env.PORT;
 //         }
 //     })
 // }
+=======
+    docClient.put(params, function(err, data) {
+        if (err) {
+            console.log("Error: ", err);
+        } else {
+            console.log("Success", data);
+        }
+    })
+}
+>>>>>>> 7cf60055e55ce2ea2ccc1dffa5f75a7f5b1cec1d
 
 
 app.listen(port, () => {
