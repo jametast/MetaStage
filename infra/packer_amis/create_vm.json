@@ -1,4 +1,4 @@
-{   "variable": {
+{   "variables": {
         "git_repo": "https://github.com/jametast/MetaStage.git"
     },
     "builders": [
