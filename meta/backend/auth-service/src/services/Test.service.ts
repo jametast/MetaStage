@@ -49,16 +49,27 @@ class TestData {
 
         try {
             const user = await docClient.query(params).promise();
-            console.log("--------Response",user);
-
-            
+            console.log("--------Response", user);
             return user;
         } catch (error) {
-            return error;
+            this.signInUser(signature, publicAddress);
         }
     }
 
-    private verifySignature(user: any, signature, publicAddress: any) {
+    private async signInUser({signature, publicAddress}: saveUserRequest): Promise<any | String> {
+        const params: any = {
+            TableName: "user_credentials",
+            Item: {
+                "publicKey": publicAddress,
+                "nonce": 1,
+                "lastLogIn": Date.now()
+            }
+        }
+        
+        await docClient.put(params, (() => console.log("user credentials not valid")))
+    }
+
+    private verifySignature(user: any, signature: string, publicAddress: any) {
 
         const msg = `I am signing my one-time nonce: ${user.nonce}`;
 

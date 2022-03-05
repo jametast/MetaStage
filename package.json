@@ -1,0 +1,7 @@
+{
+  "name": "hardhat-project",
+  "dependencies": {
+    "ethereumjs-util": "^7.1.4",
+    "jsonwebtoken": "^8.5.1"
+  }
+}
