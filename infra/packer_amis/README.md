@@ -1,0 +1,1 @@
+Create AWS AMIs based on Packer. To create your own AMI, please provide your user credentials either as environment variables or in a `credentials` file in `$HOME/.aws/`
