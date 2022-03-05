@@ -24,13 +24,7 @@
                 "apt-get install -y nodejs",
                 "npm -g install create-react-app",
                 "npm i -g typescript",
-                "npm i -g hardhat",
-                "npm root -g",
-                "npm i -g ethers",
-                "npm i -g node-metamask",
-                "mkdir dev",
-                "cd dev",
-                "git clone {{user `git_repo`}}"
+                "npm i -g hardhat"
             ]
         }
     ]
