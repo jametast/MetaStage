@@ -1,0 +1,37 @@
+{   "variable": {
+        "git_repo": "https://github.com/jametast/MetaStage.git"
+    },
+    "builders": [
+        {
+            "type": "amazon-ec2",
+            "access_key": "{{user `access_key`}}",
+            "secret_key": "{{user `secret_key`}}",
+            "region": "us-east-1",
+            "ami_name": "meta_vm",
+            "source_ami": "...",
+            "instance_type": "t2.micro",
+            "ssh_username": "ubuntu"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "sleep 30",
+                "apt update -y",
+                "apt upgrade -y",
+                "curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -",
+                "apt-get install -y nodejs",
+                "npm -g install create-react-app",
+                "npm i -g typescript",
+                "npm i -g hardhat",
+                "npm root -g",
+                "npm i -g ethers",
+                "npm i -g node-metamask",
+                "mkdir dev",
+                "cd dev",
+                "git clone {{user `git_repo`}}"
+            ]
+        }
+    ]
+}
