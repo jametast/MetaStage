@@ -1,12 +1,11 @@
 import AWS from "aws-sdk";
 
 const CONFIG = process.env;
-console.log("-------Config", CONFIG.ENDPOINT)
 const awsConfig = {
-    "region": "us-east-1",
-    "endpoint": "dynamodb.us-east-1.amazonaws.com",
-    "accessKeyId": "AKIARTTEXZSSDHR7SGCY",
-    "secretAccessKey": "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"
+    "region": CONFIG.REGION,
+    "endpoint": CONFIG.ENDPOINT,
+    "accessKeyId": CONFIG.ACCESSKEYID,
+    "secretAccessKey": CONFIG.SECRETACCESSKEY
 };
 
 AWS.config.update(awsConfig);
