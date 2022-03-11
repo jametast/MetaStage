@@ -19,7 +19,6 @@ const port = process.env.PORT;
 //         }
 //     };
 
-<<<<<<< HEAD
 //     await docClient.put(params, (err: any, data: any) => {
 //         if (data) {
 //             console.log(data);
@@ -28,16 +27,6 @@ const port = process.env.PORT;
 //         }
 //     })
 // }
-=======
-    docClient.put(params, function(err, data) {
-        if (err) {
-            console.log("Error: ", err);
-        } else {
-            console.log("Success", data);
-        }
-    })
-}
->>>>>>> 7cf60055e55ce2ea2ccc1dffa5f75a7f5b1cec1d
 
 
 app.listen(port, () => {
