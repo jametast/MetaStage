@@ -1,0 +1,25 @@
+{   
+    "variables": {
+        "ami_name": "ami-04505e74c0741db8d",
+        "ssh_user": "ubuntu"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs", 
+            "region": "us-east1",
+            "ami_name": "meta_build",
+            "source_ami": "{{user `ami_name`}}",
+            "ssh_username": "{{user `ssh_user`}}"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "sleep 30",
+                "sudo apt-get update -y",
+                "sudo apt-get upgrade -y"
+            ]
+        }
+    ]
+}

@@ -1,14 +1,16 @@
 {   "variables": {
-        "git_repo": "https://github.com/jametast/MetaStage.git"
+        "git_repo": "https://github.com/jametast/MetaStage.git",
+        "ami_name": "ami-04505e74c0741db8d",
+        "ssh_user": "ubuntu"
     },
     "builders": [
         {
             "type": "amazon-ebs",
             "region": "us-east-1",
             "ami_name": "meta_vm",
-            "source_ami": "ami-04505e74c0741db8d",
+            "source_ami": "{{user `ami_name`}}",
             "instance_type": "t2.micro",
-            "ssh_username": "ubuntu"
+            "ssh_username": "{{user `ssh_user`}}"
         }
     ],
     "provisioners": [
@@ -18,6 +20,7 @@
                 "sleep 30",
                 "sudo apt update -y",
                 "sudo apt upgrade -y",
+                "sudo apt install nginx -y",
                 "sudo apt install git -y",
                 "curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -",
                 "sudo apt-get install -y nodejs",
