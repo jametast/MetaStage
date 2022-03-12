@@ -1,7 +1,6 @@
 import AWS from "aws-sdk";
 
 const CONFIG = process.env;
-
 const awsConfig = {
     "region": CONFIG.REGION,
     "endpoint": CONFIG.ENDPOINT,
