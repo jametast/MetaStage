@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { recoverPersonalSignature } from "@metamask/eth-sig-util";
 import { bufferToHex } from "ethereumjs-util";
 import { docClient } from "../db/dbConfig";
@@ -58,7 +59,7 @@ class TestData {
         }
     }
 
-    private verifySignature(user: any, signature, publicAddress: any) {
+    private verifySignature(user: any, signature: string, publicAddress: any) {
 
         const msg = `I am signing my one-time nonce: ${user.nonce}`;
 
