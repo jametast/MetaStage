@@ -31,6 +31,10 @@
                 "sudo npm root -g",
                 "sudo npm i -g ethers",
                 "sudo npm i -g node-metamask",
+                "sudo npm install aws-sdk",
+                "mkdir .aws",
+                "touch ~/.aws/credentials", 
+                "echo '[default]' >> ~/.aws/credentials",
                 "mkdir dev",
                 "cd dev",
                 "git clone {{user `git_repo`}}"
