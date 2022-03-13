@@ -30,6 +30,8 @@
                 "sudo npm i -g hardhat",
                 "sudo npm install @openzeppelin/contracts",
                 "sudo npm install @chainlink/contracts --save",
+                "npm install --save-dev @openzeppelin/hardhat-upgrades",
+                "npm install --save-dev @nomiclabs/hardhat-ethers ethers # peer dependencies",
                 "sudo npm i -g fastify",
                 "sudo npm root -g",
                 "sudo npm i -g ethers",
