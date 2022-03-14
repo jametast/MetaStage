@@ -4,10 +4,12 @@ import { bufferToHex } from "ethereumjs-util";
 import { docClient } from "../db/dbConfig";
 import jwt from "jsonwebtoken";
 
+
 interface saveUserRequest {
     signature?: string,
     publicAddress?: string
 }
+
 class TestData {
 
     jwt_secret: string = "abcdefgh123456789posteurnfmkckkskslwjs";
