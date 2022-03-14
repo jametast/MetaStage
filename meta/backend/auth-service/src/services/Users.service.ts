@@ -35,9 +35,9 @@ class Users {
     async findByUserId(userId: string): Promise<any> {
         const queryParams: IQueryParams = {
             TableName: "user_credentials",
-            KeyConditionExpression: "userId = :userId",
+            KeyConditionExpression: "publicKey = :publicKey",
             ExpressionAttributeValues: {
-                ':userId': userId
+                ':publicKey': userId
             }
         }
 
@@ -49,12 +49,13 @@ class Users {
         }
     }
 
-    async createUser(user: any): Promise<any> {
+    async createUser(publicAddress: any): Promise<any> {
         let queryParams = {
+            TableName: "user_credentials",
             Item: {
-                user
+                "publicKey": publicAddress
             },
-            TableName: "user_credentials"
+            
         };
 
         try {

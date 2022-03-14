@@ -3,7 +3,6 @@ import { recoverPersonalSignature } from "@metamask/eth-sig-util";
 import { bufferToHex } from "ethereumjs-util";
 import { docClient } from "../db/dbConfig";
 import jwt from "jsonwebtoken";
-import { apiErrorHandler } from "../handlers/error.handler";
 
 interface saveUserRequest {
     signature?: string,
@@ -30,15 +29,14 @@ class TestData {
         // Generate a new nonce for the user
 
         const generatedNonce = await this.generateNewNonce(signatureVerification);
-
         // Create JWT
 
         const accessToken = await this.getAccessToken(generatedNonce, publicAddress);
-        
-        return accessToken;
+        return {accessToken};
     }
 
     private async checkUser ({signature, publicAddress}: saveUserRequest): Promise<any | string> {
+
 
         const params: any = {
             TableName: "user_credentials",
@@ -47,80 +45,66 @@ class TestData {
                 ':publicKey': publicAddress
             }
         }
-
         try {
             const user = await docClient.query(params).promise();
-            console.log("--------Response",user);
-
-            
             return user;
         } catch (error) {
-            return error;
+            throw new Error(error)
         }
     }
 
     private verifySignature(user: any, signature: string, publicAddress: any) {
-
-        const msg = `I am signing my one-time nonce: ${user.nonce}`;
+        const msg = `I am signing my one-time nonce: ${user.Items[0].nonce}`;
 
         const msgBufferHex = bufferToHex(Buffer.from(msg, 'utf8'));
 				const address = recoverPersonalSignature({
 					data: msgBufferHex,
-					sig: signature,
+					signature: signature,
 				});
-
         if (address.toLowerCase() === publicAddress.toLowerCase()) {
 			return user;
 		} else {
-            apiErrorHandler("error", signature, publicAddress, `Signature verification failed`);
+            throw new Error(`Signature verification failed`);
         }
 
         return null;
     }
 
     private async generateNewNonce(user) {
-        user.nonce = Math.floor(Math.random() * 10000);
+        
+        let nonce = Math.floor(Math.random() * 10000);
         let params: any = {
             TableName: "user_credentials",
             Item: {
-                "publicKey": "dsbbskbkskbskbgsbkgbskbks",
-                "nonce": 1,
-                "lastLogIn": "23:03:00",
+                "publicKey": `${user.Items[0].publicKey}`,
+                "nonce": nonce,
+                "lastLogIn": "23:00:00",
             }
         };
 
-        await docClient.put(params, (err: any, data: any) => {
-            if (data) {
-                return data;
-            } else {
-                apiErrorHandler(err, data.publicKey, data.nonce, `Nonce generation failed`);
-            }
-        })
+        try {
+            let result = await docClient.put(params).promise();
+            user.Items[0].nonce = nonce;
+            user.Items[0].lastLogIn = "23:00:00";
+            return user;
+        } catch (error) {
+            throw new Error(`Nonce generation failed`);
+        }
+
+        
     }
 
     private async getAccessToken(user, publicAddress) {
-        const token = await jwt.sign({
-            payload: {
-                id: user.id,
-                publicAddress,
-            },
-        },
-        this.jwt_secret,
+        const payload = {
+            id: user.Items[0].publicKey,
+            publicAddress: publicAddress,
+        }
+        const token = jwt.sign(payload,this.jwt_secret,
         {
             algorithm: "HS256",
-        },
-        (err, token) => {
-            if (err) {
-                return err;
-            }
-            if (!token) {
-                return new Error('Empty token');
-            }
-            return token;
-        }
-    );
-
-    return token;
+            expiresIn: '12h'
+        });
+        return token;
     }
 }
 

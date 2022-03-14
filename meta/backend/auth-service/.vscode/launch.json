@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "prelaunchTask": "tsc: build - tsconfig.json",
+            "program": "${workspaceFolder}/authService.ts",
+            "outFiles": ["${workspaceFolder}/dist/*"]
+        }
+    ]
+}
