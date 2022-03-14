@@ -59,10 +59,11 @@ class TestData {
         const msg = `I am signing my one-time nonce: ${user.Items[0].nonce}`;
 
         const msgBufferHex = bufferToHex(Buffer.from(msg, 'utf8'));
-				const address = recoverPersonalSignature({
-					data: msgBufferHex,
-					signature: signature,
-				});
+		const address = recoverPersonalSignature({
+            data: msgBufferHex,
+			signature: signature,
+		});
+        
         if (address.toLowerCase() === publicAddress.toLowerCase()) {
 			return user;
 		} else {
@@ -101,7 +102,7 @@ class TestData {
             id: user.Items[0].publicKey,
             publicAddress: publicAddress,
         }
-        const token = jwt.sign(payload,this.jwt_secret,
+        const token = jwt.sign(payload, this.jwt_secret,
         {
             algorithm: "HS256",
             expiresIn: '12h'
