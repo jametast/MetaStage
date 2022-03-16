@@ -379,10 +379,15 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
             // if creator's project was not approved
             // we refund user with the funds amount user locked
             if (!creatorProjectApproved(wallet)) {
-                // get the IERC20 token out of tokenAddress
-                IERC20 token = IERC20(tokenAddress);
-                // transfer funds back to user
-                token.transferFrom(address(this), wallet, user.totalLockedAmount);
+                // is user funded creator with plain ETH we use the call method to make the transfer
+                if (tokenAddress == address(0)) {
+                    wallet.call{value: user.totalLockedAmount - minFundValue}("");
+                } else {
+                    // user instead opted for funding with some valid ERC20 token
+                    // get the IERC20 token out of tokenAddress
+                    IERC20 token = IERC20(tokenAddress);
+                    // transfer funds back to user
+                    token.transferFrom(address(this), wallet, user.totalLockedAmount);
             }
         }
     }
