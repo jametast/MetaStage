@@ -165,14 +165,11 @@ contract CrowdFundContract is Ownable {
         // given ERC20 address, in which user wants to lock his funds (say ETH, USDT, LINK, ...), is allowed by the protocol
         require(isTokenAllowed(_tokenFundAddress), "Locked funds not allowed in this token");
 
-        uint256 tokenPrice = getTokenPrice(_tokenFundAddress);
-        uint256 fundValue = tokenPrice * _amount;
-
         // Require that msg.sender has enough funds
-        require(msg.sender.balance >= fundValue, "User has not enought ETH to fund project");
+        require(uint256(msg.sender.balance) > minFundValue, "User has not enought ETH to fund project");
         // require that amount is bigger than the min value required by our protocol, 
         // this should be bigger than protocol fee fundValue + gas on the message transaction msg.value
-        require(fundValue > minFundValue + msg.value, "Funded amount must be bigger than zero");
+        require(uint256(msg.value) > minFundValue, "Funded amount must be bigger than zero");
         // Require that public key of creator is valid
         require(creatorsMapping[_wallet], "Creator's public address is unrecognized");
         // Require that creator is elligible, (that is, minted art cover NFT at the platform, etc)
@@ -182,23 +179,24 @@ contract CrowdFundContract is Ownable {
         // define the creator value
         Creator storage creator = addressToCreatorMapping[_wallet];
         // Encapsulate data into a User structure
-        User memory user = User(payable(msg.sender), _amount, _tokenFundAddress, _wallet);
+        User memory user = User(payable(msg.sender), uint256(msg.value), _tokenFundAddress, _wallet);
         // users mapping is updated with the public key interacting with the contract
         usersMapping[msg.sender] = true;
         // address to user mapping is updated
         addressToUserMapping[msg.sender] = user;
+
         // Lock funds from user into the current smart contract
+        // Locked funds will correspond to the value of msg.value
+        // however the amount funded to given creator corresponds to msg.value - minFundValue
         // These funds will be then distributed to the chosen creator, given that creator obtained enough funds
-        (bool successful, _) = payable(msg.sender).call{value: _amount}("");
         // we require that the transaction was correctly processed
-        require(successful);
         
         // user data is pushed to usersArray
         usersArray.push(user);
 
         // creator data is obtained by the creator's public key
         // we update the creator total funds variable
-        creator.totalFunds += fundValue - minFundValue;
+        creator.totalFunds += uint256(msg.value) - minFundValue;
         // we update the array containing users that contributed with funds to creator with msg.sender
         creator.fanClub.push(msg.sender);
     }
@@ -206,6 +204,7 @@ contract CrowdFundContract is Ownable {
     // a user is allowed to lock a certain amount of available ERC20 tokens 
     // and associate such funds to a given creator. This amount is locked into
     // the current contract until crowd fund is over. 
+    //
     // function overload to account for possible different fund tokens on the protocol
     function fund(uint256 _amount, address _tokenFundAddress, address _wallet) public {
         // require that we are into the crowd fund period
