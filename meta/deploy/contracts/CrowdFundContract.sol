@@ -17,7 +17,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: 
 
-contract CrowdFundContract is Ownable {
+contract CrowdFundContract is Ownable, ReentrancyGuard {
     
     // user structure, it encapsulates user public key, 
     // the total amount of funds he locked in our smart contract
@@ -98,6 +98,8 @@ contract CrowdFundContract is Ownable {
             address token = _allowedFundingTokens[index];
             allowedFundingTokens[token] = true;
         }
+        // we add the 0th address, which will be useful to deal with the case where we have to transfer ETH directly
+        allowedFundingTokens[address(0)] = true;
     }
 
     // public view to check if start time to request funds already passed
@@ -159,12 +161,10 @@ contract CrowdFundContract is Ownable {
     // and associate such funds to a given creator. This amount is locked into
     // the current contract until crowd fund is over. 
     // We need OpenZeppelin nonReentrant safety guard against possible reentrant attacks 
-    function fund(uint256 _amount, address _wallet) public nonReentrant {
+    function fund(uint256 _amount, address _wallet) nonReentrant public payable {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
-        // given ERC20 address, in which user wants to lock his funds (say ETH, USDT, LINK, ...), is allowed by the protocol
-        require(isTokenAllowed(_tokenFundAddress), "Locked funds not allowed in this token");
-
+       
         // Require that msg.sender has enough funds
         require(uint256(msg.sender.balance) > minFundValue, "User has not enought ETH to fund project");
         // require that amount is bigger than the min value required by our protocol, 
@@ -179,7 +179,7 @@ contract CrowdFundContract is Ownable {
         // define the creator value
         Creator storage creator = addressToCreatorMapping[_wallet];
         // Encapsulate data into a User structure
-        User memory user = User(payable(msg.sender), uint256(msg.value), _tokenFundAddress, _wallet);
+        User memory user = User(payable(msg.sender), uint256(msg.value), address(0), _wallet); // since we are transferring ETH in this fund overload method, we use the null address `address(0)`
         // users mapping is updated with the public key interacting with the contract
         usersMapping[msg.sender] = true;
         // address to user mapping is updated
@@ -206,7 +206,7 @@ contract CrowdFundContract is Ownable {
     // the current contract until crowd fund is over. 
     //
     // function overload to account for possible different fund tokens on the protocol
-    function fund(uint256 _amount, address _tokenFundAddress, address _wallet) public {
+    function fund(uint256 _amount, address _tokenFundAddress, address _wallet) public payable {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
         // given ERC20 address, in which user wants to lock his funds (say ETH, USDT, LINK, ...), is allowed by the protocol
@@ -343,16 +343,21 @@ contract CrowdFundContract is Ownable {
         for (uint256 i = 0; i < fanClub.length; i++) {
             // user public key address
             address userWallet = fanClub[i];
-            // which ERC20 token did user locked his funds
-            address tokenAddress = userAllowedTokenMapping[userWallet];
-            // get the ERC20 token out of token
-            IERC20 token = IERC20(tokenAddress);
-            // get user from public key
             User memory user = addressToUserMapping[userWallet];
             // total locked amount of user
             uint256 totalLockedAmount = user.totalLockedAmount;
-            // transfer those ERC20 token funds from the present smart contract to creator's wallet
-            token.transferFrom(address(this), _wallet, totalLockedAmount);
+            // which ERC20 token did user locked his funds
+            address tokenAddress = userAllowedTokenMapping[userWallet];
+            // if user funded creator with plain ETH we use a call to the call method
+            if (tokenAddress == address(0)) {
+                _wallet.call{value: totalLockedAmount - minFundValue}("");
+            } else{
+                // user funded creator using a valid ERC20 token address, so we use the IERC20 logic to make the transfer
+                // get the ERC20 token out of token
+                IERC20 token = IERC20(tokenAddress);                
+                // transfer those ERC20 token funds from the present smart contract to creator's wallet
+                token.transferFrom(address(this), _wallet, totalLockedAmount);
+            }
         }
     }
 
