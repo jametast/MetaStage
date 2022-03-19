@@ -388,6 +388,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
                     IERC20 token = IERC20(tokenAddress);
                     // transfer funds back to user
                     token.transferFrom(address(this), wallet, user.totalLockedAmount);
+                }
             }
         }
     }
