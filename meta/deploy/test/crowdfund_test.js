@@ -17,7 +17,7 @@ describe("CrowdFundContract", function () {
         const startCrowdFund = nowInSeconds + 60 * (2 + 5 + 1) 
         // crow fundings lasts for 10 minutes
         const endCrowdFund = nowInSeconds + 60 * (2 + 5 + 1 + 10) 
-        // 0.01 Eth
+        // 0.001 ETH = 1e15 Wei
         const minFundValue = 1000000000000000; 
         // for the moment we only allow funding in ETH
         const allowedFundingTokens = [] 
@@ -121,9 +121,10 @@ describe("CrowdFundContract", function () {
         // requesting funds should have ended by now
         assert(endRequestFundsPeriodBool);
         // crowd funding should have started by now
-        assert(!startCrowdFundPeriodBool);
+        assert(startCrowdFundPeriodBool);
         // crowd funding should have ended by now
-        assert(!endCrowdFundPeriodBool);
+        assert(endCrowdFundPeriodBool);
 
+        
     })
 })
