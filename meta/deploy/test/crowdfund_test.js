@@ -14,11 +14,11 @@ describe("CrowdFundContract", function () {
         // requesting funds will have a duration of 5 minutes
         const endRequestFunds = nowInSeconds + 60 * (2 + 5) 
         // crowd funding starts 1 minute laters
-        const startCrowdFund = nowInSeconds + 60 * (2 + 6) 
+        const startCrowdFund = nowInSeconds + 60 * (2 + 5 + 1) 
         // crow fundings lasts for 10 minutes
-        const endCrowdFund = nowInSeconds = 60 * (2 + 6 + 10) 
+        const endCrowdFund = nowInSeconds + 60 * (2 + 5 + 1 + 10) 
         // 0.01 Eth
-        const minFundValue = 0.01 
+        const minFundValue = 1000000000000000; 
         // for the moment we only allow funding in ETH
         const allowedFundingTokens = [] 
         

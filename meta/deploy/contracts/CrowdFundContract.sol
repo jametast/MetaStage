@@ -82,7 +82,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         // start time to request funds should be after constructor is invoked
         require(_startTimeRequestFunds > block.timestamp, "Votation starting time already in the past");
         // start time to request funds should be prior to end time to request funds
-        require(_startTimeRequestFunds < endTimeRequestFunds, "Invalid request funds period");
+        require(_startTimeRequestFunds < _endTimeRequestFunds, "Invalid request funds period");
         // users can only lock funds into the crowd fund contract after period to request funds has finished
         require(_endTimeRequestFunds < _startTimeCrowdFund, "Crowd fund should start after request funds period");
         // start time for users to crowd fund projects should be prior to end time
