@@ -66,7 +66,7 @@ describe("CrowdFundContract", function () {
         };
 
         // expect null output from getTimeLeftRquestFunds == expect(error) to be an error
-        const expectUndefined = await getTimeLeftRequestFunds();
+        let expectUndefined = await getTimeLeftRequestFunds();
         expect(expectUndefined).to.be.a("undefined");
 
         // test that getTimeLeftCrowdFund() throws an error outside request funds period
@@ -151,11 +151,11 @@ describe("CrowdFundContract", function () {
 
         // test that getTimeLeftRequestFunds throws an error outside request funds period
         expectUndefined = await getTimeLeftRequestFunds();
-        expect(expectUndefined).to.be.a("null");
+        expect(expectUndefined).to.be.a("undefined");
 
         // test that getTimeLeftCrowdFund throws an error outside crowd funds period
         expectUndefined = await getTimeLeftCrowdFund();
-        expect(expectUndefined).to.be.a("null");
+        expect(expectUndefined).to.be.a("undefined");
 
 
         // get current block data
@@ -187,10 +187,10 @@ describe("CrowdFundContract", function () {
 
         // test that getTimeLeftRequestFunds throws an error outside request funds period
         expectUndefined = await getTimeLeftRequestFunds();
-        expect(expectUndefined).to.be.a("null");
+        expect(expectUndefined).to.be.a("undefined");
 
         // test getTimeLeftCrowdFund() method
-        const timeLeftCrowdFund = crowdFundContract.getTimeLeftCrowdFund();
+        const timeLeftCrowdFund = await crowdFundContract.getTimeLeftCrowdFund();
 
         // get current block data
         currentBlockData = await ethers.provider.getBlock();
@@ -216,6 +216,11 @@ describe("CrowdFundContract", function () {
         // request mining new block with this new timestamp
         await ethers.provider.send("evm_mine");
 
+        startedRequestFundsPeriodBool = await crowdFundContract.requestFundsStarted();
+        endRequestFundsPeriodBool = await crowdFundContract.requestFundsEnded();
+        startCrowdFundPeriodBool = await crowdFundContract.crowdFundStarted();
+        endCrowdFundPeriodBool = await crowdFundContract.crowdFundEnded();
+        
         // requesting funds should have started by now
         assert(startedRequestFundsPeriodBool);
         // requesting funds should have ended by now
