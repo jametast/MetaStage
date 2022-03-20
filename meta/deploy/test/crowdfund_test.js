@@ -56,8 +56,9 @@ describe("CrowdFundContract", function () {
         assert(!endCrowdFundPeriodBool);
 
         // test getTimeLeftRequestFunds() method
-        expect(async () => await crowdFundContract.getTimeLeftRequestFunds()).to.throw("Requesting funds period not available");
-
+       
+        expect(async () => await crowdFundContract.getTimeLeftRequestFunds()).to.throw("Requesting funds period not available").catch(console.error);
+        
         // we pass forward time to start requesting funds
         let increaseTimeInSeconds = 60 * 2 + 1;
         // request new block with new timestamp of 2 minutes more
