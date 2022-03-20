@@ -17,7 +17,7 @@ describe("CrowdFundContract", function () {
         const startCrowdFund = nowInSeconds + 60 * (2 + 5 + 1) 
         // crow fundings lasts for 10 minutes
         const endCrowdFund = nowInSeconds + 60 * (2 + 5 + 1 + 10) 
-        // 0.01 Eth
+        // 0.001 ETH = 1e15 Wei
         const minFundValue = 1000000000000000; 
         // for the moment we only allow funding in ETH
         const allowedFundingTokens = [] 
@@ -32,20 +32,19 @@ describe("CrowdFundContract", function () {
             endCrowdFund
         );
         
-        // assert that requesting funds has not yet started
-        let startRequestFundsTimeValue = await crowdFundContract.requestFundsStarted();
-        let endRequestFundsTimeValue = await crowdFundContract.requestFundsEnded();
-        let startCrowdFundTimeValue = await crowdFundContract.crowdFundStarted();
-        let endCrowdFundTimeValue = await crowdFundContract.crowdFundsEnded();
+        let startedRequestFundsPeriodBool = await crowdFundContract.requestFundsStarted();
+        let endRequestFundsPeriodBool = await crowdFundContract.endRequestFundsEnded();
+        let startCrowdFundPeriodBool = await crowdFundContract.crowdFundStarted();
+        let endCrowdFundPeriodBool = await crowdFundContract.crowdFundEnded();
 
         // assert that requesting funds has not yet started
-        assert(!startRequestFundsTimeValue);
+        assert(startedRequestFundsPeriodBool);
         // assert that requesting funds has not yet ended
-        assert(!endRequestFundsTimeValue);
+        assert(!endRequestFundsPeriodBool);
         // assert that crowd funding has not yet started
-        assert(!startCrowdFundTimeValue);
+        assert(!startCrowdFundPeriodBool);
         // assert that crowd funding has not yet ended
-        assert(!endCrowdFundTimeValue);
+        assert(!endCrowdFundPeriodBool);
 
         // we pass forward time to start requesting funds
         let increaseTimeInSeconds = 60 * 2 + 1;
@@ -53,21 +52,20 @@ describe("CrowdFundContract", function () {
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
         await ethers.provider.send("evm_mine");
-
-
-        startRequestFundsTimeValue = await crowdFundContract.requestFundsStarted(); 
-        endRequestFundsTimeValue = await crowdFundContract.requestFundsEnded();
-        startCrowdFundTimeValue = await crowdFundContract.crowdFundStarted();
-        endCrowdFundTimeValue = await crowdFundContract.crowdFundsEnded();  
+        
+        startedRequestFundsPeriodBool = await crowdFundContract.requestFundsStarted();
+        endRequestFundsPeriodBool = await crowdFundContract.endRequestFundsEnded();
+        startCrowdFundPeriodBool = await crowdFundContract.crowdFundStarted();
+        endCrowdFundPeriodBool = await crowdFundContract.crowdFundEnded();
 
         // requesting funds should have started by now
-        assert(startRequestFundsTimeValue);
+        assert(startedRequestFundsPeriodBool);
         // assert that requesting funds has not yet ended
-        assert(!endRequestFundsTimeValue);
+        assert(!endRequestFundsPeriodBool);
         // assert that crowd funding has not yet started
-        assert(!startCrowdFundTimeValue);
+        assert(!startCrowdFundPeriodBool);
         // assert that crowd funding has not yet ended
-        assert(!endCrowdFundTimeValue);
+        assert(!endCrowdFundPeriodBool);
             
         // we pass forward time to end requesting funds
         increaseTimeInSeconds += 60 * 5
@@ -81,14 +79,19 @@ describe("CrowdFundContract", function () {
         startCrowdFundTimeValue = await crowdFundContract.crowdFundStarted();
         endCrowdFundTimeValue = await crowdFundContract.crowdFundsEnded();  
 
+        startedRequestFundsPeriodBool = await crowdFundContract.requestFundsStarted();
+        endRequestFundsPeriodBool = await crowdFundContract.endRequestFundsEnded();
+        startCrowdFundPeriodBool = await crowdFundContract.crowdFundStarted();
+        endCrowdFundPeriodBool = await crowdFundContract.crowdFundEnded();
+        
         // requesting funds should have started by now
-        assert(startRequestFundsTimeValue);
+        assert(startedRequestFundsPeriodBool);
         // requesting funds should have ended by now
-        assert(endRequestFundsTimeValue);
+        assert(endRequestFundsPeriodBool);
         // assert that crowd funding has not yet started
-        assert(!startCrowdFundTimeValue);
+        assert(!startCrowdFundPeriodBool);
         // assert that crowd funding has not yet ended
-        assert(!endCrowdFundTimeValue);
+        assert(!endCrowdFundPeriodBool);
 
         // we pass forward time to start crowd funding 
         increaseTimeInSeconds += 60 
@@ -96,15 +99,20 @@ describe("CrowdFundContract", function () {
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
         await ethers.provider.send("evm_mine");
-
+        
+        startedRequestFundsPeriodBool = await crowdFundContract.requestFundsStarted();
+        endRequestFundsPeriodBool = await crowdFundContract.endRequestFundsEnded();
+        startCrowdFundPeriodBool = await crowdFundContract.crowdFundStarted();
+        endCrowdFundPeriodBool = await crowdFundContract.crowdFundEnded();
+        
         // requesting funds should have started by now
-        assert(crowdFundContract.requestFundsStarted());
+        assert(startedRequestFundsPeriodBool);
         // requesting funds should have ended by now
-        assert(crowdFundContract.requestFundsEnded());
+        assert(endRequestFundsPeriodBool);
         // crowd funding should have started by now
-        assert(crowdFundContract.crowdFundStarted());
+        assert(startCrowdFundPeriodBool);
         // assert that crowd funding has not yet ended
-        assert(!crowdFundContract.crowdFundEnded());
+        assert(!endCrowdFundPeriodBool);
 
         // finally we pass forward time to end crowd funding
         increaseTimeInSeconds += 60 * 10
@@ -114,13 +122,14 @@ describe("CrowdFundContract", function () {
         await ethers.provider.send("evm_mine");
 
         // requesting funds should have started by now
-        assert(crowdFundContract.requestFundsStarted());
+        assert(startedRequestFundsPeriodBool);
         // requesting funds should have ended by now
-        assert(crowdFundContract.requestFundsEnded());
+        assert(endRequestFundsPeriodBool);
         // crowd funding should have started by now
-        assert(!crowdFundContract.crowdFundStarted());
+        assert(startCrowdFundPeriodBool);
         // crowd funding should have ended by now
-        assert(!crowdFundContract.crowdFundEnded());
+        assert(endCrowdFundPeriodBool);
 
+        
     })
 })
