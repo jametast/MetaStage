@@ -55,10 +55,34 @@ describe("CrowdFundContract", function () {
         // assert that crowd funding has not yet ended
         assert(!endCrowdFundPeriodBool);
 
-        // test getTimeLeftRequestFunds() method
-       
-        expect(async () => await crowdFundContract.getTimeLeftRequestFunds()).to.throw("Requesting funds period not available").catch(console.error);
-        
+        // test that getTimeLeftRequestFunds() throws an error outside request funds period
+        const getTimeLeftRequestFunds = async () => {
+            try {
+                await crowdFundContract.getTimeLeftRequestFunds();
+            } catch(err) {
+                error = err;
+            }
+            expect(error).to.be.an("Error")
+        };
+
+        // expect null output from getTimeLeftRquestFunds == expect(error) to be an error
+        const expectNull = await getTimeLeftRequestFunds();
+        assert(expectNull).to.be.a("null");
+
+        // test that getTimeLeftCrowdFund() throws an error outside request funds period
+        const getTimeLeftCrowdFund = async () => {
+            try {
+                await crowdFundContract.getTimeLeftCrowdFund;
+            } catch(err) {
+                error = err;
+            }
+            expect(error).to.be.an("Error");
+        }
+
+        // expect null output from getTimeLeftCrowdFund == expect(error) to be an error
+        expectNull = await getTimeLeftCrowdFund();
+        assert(expectNull).to.be.a("null");
+
         // we pass forward time to start requesting funds
         let increaseTimeInSeconds = 60 * 2 + 1;
         // request new block with new timestamp of 2 minutes more
@@ -115,6 +139,15 @@ describe("CrowdFundContract", function () {
         // assert that crowd funding has not yet ended
         assert(!endCrowdFundPeriodBool);
 
+        // test that getTimeLeftRequestFunds throws an error outside request funds period
+        expectNull = await getTimeLeftRequestFunds();
+        assert(expectNull).to.be.a("null");
+
+        // test that getTimeLeftCrowdFund throws an error outside crowd funds period
+        expectNull = await getTimeLeftCrowdFund();
+        assert(expectNull).to.be.a("null");
+
+
         // we pass forward time to start crowd funding 
         increaseTimeInSeconds += 60 
         // request new block with new timestamp of 1 minute more
@@ -136,11 +169,24 @@ describe("CrowdFundContract", function () {
         // assert that crowd funding has not yet ended
         assert(!endCrowdFundPeriodBool);
 
+        // test that getTimeLeftRequestFunds throws an error outside request funds period
+        expectNull = await getTimeLeftRequestFunds();
+        assert(expectNull).to.be.a("null");
+
         // test getTimeLeftCrowdFund() method
-        const getTimeLeftCrowdFund = crowdFundContract.getTimeLeftCrowdFund();
+        const timeLeftCrowdFund = crowdFundContract.getTimeLeftCrowdFund();
 
-        assert()
-
+        // get current block data
+        currentBlockData = await ethers.provider.getBlock();
+        // get current block timestamp
+        currentBlockTimestamp = await currentBlockData["timestamp"];
+        
+        // get number of seconds from current block timstamp to end request funds time 
+        const endCrowdFundToCurrentBlockTimestamp = endCrowdFund - currentBlockTimestamp;
+        
+        // assert timeLeftRequestFunds == endRequestFundsToCurrentTimeBlock
+        assert(endCrowdFundToCurrentBlockTimestamp == timeLeftCrowdFund);
+        
         // finally we pass forward time to end crowd funding
         increaseTimeInSeconds += 60 * 10
         // request new block with new timestmap of 10 minutes more 
@@ -157,7 +203,12 @@ describe("CrowdFundContract", function () {
         // crowd funding should have ended by now
         assert(endCrowdFundPeriodBool);
 
-        
-        
+        // expect that getTimeLeftRequestFunds throws an error
+        expectNull = await getTimeLeftRequestFunds();
+        assert(expectNull).to.be.a("null");
+
+        // test that getTimeLeftCrowdFund throws an error outside crowd funds period
+        expectNull = await getTimeLeftCrowdFund();
+        assert(expectNull).to.be.a("null");        
     })
 })
