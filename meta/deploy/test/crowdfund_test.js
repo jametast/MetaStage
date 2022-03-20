@@ -66,8 +66,8 @@ describe("CrowdFundContract", function () {
         };
 
         // expect null output from getTimeLeftRquestFunds == expect(error) to be an error
-        const expectNull = await getTimeLeftRequestFunds();
-        assert(expectNull).to.be.a("null");
+        const expectUndefined = await getTimeLeftRequestFunds();
+        expect(expectUndefined).to.be.a("undefined");
 
         // test that getTimeLeftCrowdFund() throws an error outside request funds period
         const getTimeLeftCrowdFund = async () => {
@@ -80,11 +80,16 @@ describe("CrowdFundContract", function () {
         }
 
         // expect null output from getTimeLeftCrowdFund == expect(error) to be an error
-        expectNull = await getTimeLeftCrowdFund();
-        assert(expectNull).to.be.a("null");
+        expectUndefined = await getTimeLeftCrowdFund();
+        expect(expectUndefined).to.be.a("undefined");
 
+        // get current block data
+        currentBlockData = await ethers.provider.getBlock();
+        // get current block timestamp
+        currentBlockTimestamp = await currentBlockData["timestamp"];
+        
         // we pass forward time to start requesting funds
-        let increaseTimeInSeconds = 60 * 2 + 1;
+        let increaseTimeInSeconds = startRequestFunds - currentBlockTimestamp + 1;
         // request new block with new timestamp of 2 minutes more
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
@@ -118,17 +123,22 @@ describe("CrowdFundContract", function () {
         // assert timeLeftRequestFunds == endRequestFundsToCurrentTimeBlock
         assert(endRequestFundsToCurrentTimeBlock == timeLeftRequestFunds);
         
-        // we pass forward time to end requesting funds
-        increaseTimeInSeconds += 60 * 5
-        // request new block with n funds has already finishedew timestamp of 5 minutes more
+        // get current block data
+        currentBlockData = await ethers.provider.getBlock();
+        // get current block timestamp
+        currentBlockTimestamp = await currentBlockData["timestamp"];
+        
+        // we pass forward time to start requesting funds
+        increaseTimeInSeconds = endRequestFunds - currentBlockTimestamp + 1;
+        // request new block with new timestamp of 2 minutes more
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
         await ethers.provider.send("evm_mine");
         
-        startRequestFundsTimeValue = await crowdFundContract.requestFundsStarted(); 
-        endRequestFundsTimeValue = await crowdFundContract.requestFundsEnded();
-        startCrowdFundTimeValue = await crowdFundContract.crowdFundStarted();
-        endCrowdFundTimeValue = await crowdFundContract.crowdFundsEnded();  
+        startedRequestFundsPeriodBool = await crowdFundContract.requestFundsStarted(); 
+        endRequestFundsPeriodBool = await crowdFundContract.requestFundsEnded();
+        startCrowdFundPeriodBool = await crowdFundContract.crowdFundStarted();
+        endCrowdFundPeriodBool = await crowdFundContract.crowdFundEnded();  
         
         // requesting funds should have started by now
         assert(startedRequestFundsPeriodBool);
@@ -140,16 +150,22 @@ describe("CrowdFundContract", function () {
         assert(!endCrowdFundPeriodBool);
 
         // test that getTimeLeftRequestFunds throws an error outside request funds period
-        expectNull = await getTimeLeftRequestFunds();
-        assert(expectNull).to.be.a("null");
+        expectUndefined = await getTimeLeftRequestFunds();
+        expect(expectUndefined).to.be.a("null");
 
         // test that getTimeLeftCrowdFund throws an error outside crowd funds period
-        expectNull = await getTimeLeftCrowdFund();
-        assert(expectNull).to.be.a("null");
+        expectUndefined = await getTimeLeftCrowdFund();
+        expect(expectUndefined).to.be.a("null");
 
 
-        // we pass forward time to start crowd funding 
-        increaseTimeInSeconds += 60 
+        // get current block data
+        currentBlockData = await ethers.provider.getBlock();
+        // get current block timestamp
+        currentBlockTimestamp = await currentBlockData["timestamp"];
+         
+        // we pass forward time to start requesting funds
+        increaseTimeInSeconds = startCrowdFund - currentBlockTimestamp + 1;
+         
         // request new block with new timestamp of 1 minute more
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
@@ -170,8 +186,8 @@ describe("CrowdFundContract", function () {
         assert(!endCrowdFundPeriodBool);
 
         // test that getTimeLeftRequestFunds throws an error outside request funds period
-        expectNull = await getTimeLeftRequestFunds();
-        assert(expectNull).to.be.a("null");
+        expectUndefined = await getTimeLeftRequestFunds();
+        expect(expectUndefined).to.be.a("null");
 
         // test getTimeLeftCrowdFund() method
         const timeLeftCrowdFund = crowdFundContract.getTimeLeftCrowdFund();
@@ -187,8 +203,14 @@ describe("CrowdFundContract", function () {
         // assert timeLeftRequestFunds == endRequestFundsToCurrentTimeBlock
         assert(endCrowdFundToCurrentBlockTimestamp == timeLeftCrowdFund);
         
-        // finally we pass forward time to end crowd funding
-        increaseTimeInSeconds += 60 * 10
+        // get current block data
+        currentBlockData = await ethers.provider.getBlock();
+        // get current block timestamp
+        currentBlockTimestamp = await currentBlockData["timestamp"];
+         
+        // we pass forward time to start requesting funds
+        increaseTimeInSeconds = endCrowdFund - currentBlockTimestamp + 1;
+         
         // request new block with new timestmap of 10 minutes more 
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
@@ -204,11 +226,11 @@ describe("CrowdFundContract", function () {
         assert(endCrowdFundPeriodBool);
 
         // expect that getTimeLeftRequestFunds throws an error
-        expectNull = await getTimeLeftRequestFunds();
-        assert(expectNull).to.be.a("null");
+        expectUndefined = await getTimeLeftRequestFunds();
+        expect(expectUndefined).to.be.a("undefined");
 
         // test that getTimeLeftCrowdFund throws an error outside crowd funds period
-        expectNull = await getTimeLeftCrowdFund();
-        assert(expectNull).to.be.a("null");        
+        expectUndefined = await getTimeLeftCrowdFund();
+        expect(expectUndefined).to.be.a("undefined");        
     })
 })
