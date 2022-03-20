@@ -124,7 +124,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
 
     // modifier to check if we are at request funds period
     modifier requestFundsTimerOver {
-        require(startTimeRequestFunds <= block.timestamp && block.timestamp <= endTimeRequestFunds, "Request funds has already finished");
+        require(startTimeRequestFunds <= block.timestamp && block.timestamp <= endTimeRequestFunds, "Requesting funds period not available");
         _;
     }
 
