@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -119,7 +120,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
 
     // public view to check if end time to request funds already passed
     function crowdFundEnded() public view returns(bool) {
-        return endTimeCrowdFund > block.timestamp;
+        return endTimeCrowdFund < block.timestamp;
     }
 
     // modifier to check if we are at request funds period

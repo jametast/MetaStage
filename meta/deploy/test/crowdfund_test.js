@@ -36,10 +36,14 @@ describe("CrowdFundContract", function () {
             startCrowdFund, 
             endCrowdFund
         );
-
+        
+        // does request funds period started?
         let startedRequestFundsPeriodBool = await crowdFundContract.requestFundsStarted();
+        // does request funds period ended?
         let endRequestFundsPeriodBool = await crowdFundContract.requestFundsEnded();
+        // does crowd fund period started?
         let startCrowdFundPeriodBool = await crowdFundContract.crowdFundStarted();
+        // does crowd fund period ended?
         let endCrowdFundPeriodBool = await crowdFundContract.crowdFundEnded();
 
         // assert that requesting funds has not yet started
@@ -50,6 +54,9 @@ describe("CrowdFundContract", function () {
         assert(!startCrowdFundPeriodBool);
         // assert that crowd funding has not yet ended
         assert(!endCrowdFundPeriodBool);
+
+        // test getTimeLeftRequestFunds() method
+        expect(async () => await crowdFundContract.getTimeLeftRequestFunds()).to.throw("Requesting funds period not available");
 
         // we pass forward time to start requesting funds
         let increaseTimeInSeconds = 60 * 2 + 1;
@@ -76,9 +83,9 @@ describe("CrowdFundContract", function () {
         const timeLeftRequestFunds = await crowdFundContract.getTimeLeftRequestFunds();
 
         // get current block data
-        currentBlockData = ethers.provider.getBlock();
+        currentBlockData = await ethers.provider.getBlock();
         // get current block timestamp
-        currentBlockTimestamp = currentBlockData["timestamp"];
+        currentBlockTimestamp = await currentBlockData["timestamp"];
         
         // get number of seconds from current block timstamp to end request funds time 
         const endRequestFundsToCurrentTimeBlock = endRequestFunds - currentBlockTimestamp;
@@ -88,7 +95,7 @@ describe("CrowdFundContract", function () {
         
         // we pass forward time to end requesting funds
         increaseTimeInSeconds += 60 * 5
-        // request new block with new timestamp of 5 minutes more
+        // request new block with n funds has already finishedew timestamp of 5 minutes more
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
         await ethers.provider.send("evm_mine");
