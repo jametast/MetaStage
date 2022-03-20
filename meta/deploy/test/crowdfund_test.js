@@ -33,13 +33,19 @@ describe("CrowdFundContract", function () {
         );
         
         // assert that requesting funds has not yet started
-        assert(!crowdFundContract.requestFundsStarted());
+        let startRequestFundsTimeValue = await crowdFundContract.requestFundsStarted();
+        let endRequestFundsTimeValue = await crowdFundContract.requestFundsEnded();
+        let startCrowdFundTimeValue = await crowdFundContract.crowdFundStarted();
+        let endCrowdFundTimeValue = await crowdFundContract.crowdFundsEnded();
+
+        // assert that requesting funds has not yet started
+        assert(!startRequestFundsTimeValue);
         // assert that requesting funds has not yet ended
-        assert(!crowdFundContract.requestFundsEnded());
+        assert(!endRequestFundsTimeValue);
         // assert that crowd funding has not yet started
-        assert(!crowdFundContract.crowdFundStarted());
+        assert(!startCrowdFundTimeValue);
         // assert that crowd funding has not yet ended
-        assert(!crowdFundContract.crowdFundEnded());
+        assert(!endCrowdFundTimeValue);
 
         // we pass forward time to start requesting funds
         let increaseTimeInSeconds = 60 * 2 + 1;
@@ -47,15 +53,21 @@ describe("CrowdFundContract", function () {
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
         await ethers.provider.send("evm_mine");
-            
+
+
+        startRequestFundsTimeValue = await crowdFundContract.requestFundsStarted(); 
+        endRequestFundsTimeValue = await crowdFundContract.requestFundsEnded();
+        startCrowdFundTimeValue = await crowdFundContract.crowdFundStarted();
+        endCrowdFundTimeValue = await crowdFundContract.crowdFundsEnded();  
+
         // requesting funds should have started by now
-        assert(crowdFundContract.requestFundsStarted());
+        assert(startRequestFundsTimeValue);
         // assert that requesting funds has not yet ended
-        assert(!crowdFundContract.requestFundsEnded());
+        assert(!endRequestFundsTimeValue);
         // assert that crowd funding has not yet started
-        assert(!crowdFundContract.crowdFundStarted());
+        assert(!startCrowdFundTimeValue);
         // assert that crowd funding has not yet ended
-        assert(!crowdFundContract.crowdFundEnded());
+        assert(!endCrowdFundTimeValue);
             
         // we pass forward time to end requesting funds
         increaseTimeInSeconds += 60 * 5
@@ -63,15 +75,20 @@ describe("CrowdFundContract", function () {
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
         // request mining new block with this new timestamp
         await ethers.provider.send("evm_mine");
+        
+        startRequestFundsTimeValue = await crowdFundContract.requestFundsStarted(); 
+        endRequestFundsTimeValue = await crowdFundContract.requestFundsEnded();
+        startCrowdFundTimeValue = await crowdFundContract.crowdFundStarted();
+        endCrowdFundTimeValue = await crowdFundContract.crowdFundsEnded();  
 
         // requesting funds should have started by now
-        assert(crowdFundContract.requestFundsStarted());
+        assert(startRequestFundsTimeValue);
         // requesting funds should have ended by now
-        assert(crowdFundContract.requestFundsEnded());
+        assert(endRequestFundsTimeValue);
         // assert that crowd funding has not yet started
-        assert(!crowdFundContract.crowdFundStarted());
+        assert(!startCrowdFundTimeValue);
         // assert that crowd funding has not yet ended
-        assert(!crowdFundContract.crowdFundEnded());
+        assert(!endCrowdFundTimeValue);
 
         // we pass forward time to start crowd funding 
         increaseTimeInSeconds += 60 
