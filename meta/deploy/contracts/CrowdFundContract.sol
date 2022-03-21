@@ -103,6 +103,16 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         allowedFundingTokens[address(0)] = true;
     }
 
+
+    function getStartTimeRequestFunds() public view returns(uint256) {
+        return startTimeRequestFunds;
+    }
+
+    // returns variable endTime
+    function getEndTimeRequestFunds() public view returns(uint256) {
+        return endTimeRequestFunds;
+    }
+
     // public view to check if start time to request funds already passed
     function requestFundsStarted() public view returns(bool) {
         return startTimeRequestFunds < block.timestamp;
@@ -279,8 +289,8 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         
         // update creatorsMapping to true on current creator wallet
         creatorsMapping[msg.sender] = true;
-        // instantiate an empty array of addresses
-        address[] memory fanClub = new address[](10);
+        // instantiate a dynamic empty array of addresses
+        address[] memory fanClub;
         // encapsulate data into a Creator structure instance
         Creator memory creator = Creator(payable(msg.sender), _amount, 0, fanClub);    // when requesting funds, we assume it is the first time creator does so, therefore its total funded value should be 0
         // update addressToCreatorMapping
