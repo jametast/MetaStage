@@ -2,7 +2,7 @@ const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
 
-describe("CrowdFundContract", function () {
+describe("CrowdFundContractTimeLine", function () {
     it("Timeline testing of crowd funding contract", async function () {
         // get contract factory
         const CrowdFundContract = await ethers.getContractFactory("CrowdFundContract");

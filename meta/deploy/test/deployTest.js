@@ -2,7 +2,7 @@ const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
 
 
-export const getCrowdFundContract = async () => {
+const getCrowdFundContract = async () => {
     const CrowdFundContract = await ethers.getContractFactory("CrowdFundContract");
         
     // get current block data
@@ -39,8 +39,10 @@ export const getCrowdFundContract = async () => {
 }
 
 
-export const getCurrentBlockTimestamp = async () => {
+const getCurrentBlockTimestamp = async () => {
     const currentBlockData = await ethers.provider.getBlock();
     const currentTimestamp = currentBlockData["timestamp"];
     return currentTimestamp;
 }
+
+module.exports = { getCrowdFundContract, getCurrentBlockTimestamp };

@@ -1,6 +1,6 @@
 const { expect, assert } = require("chai");
 const { ethers } = require("hardhat");
-import { getCrowdFundContract, getCurrentBlockTimestamp } from "./deployTest";
+const { getCrowdFundContract, getCurrentBlockTimestamp } = require("./deployTest");
 
 
 describe("CrowdFundRequestFunds", function () {
@@ -67,9 +67,8 @@ describe("CrowdFundRequestFunds", function () {
         } catch(err) {
           console.log("requesting funds twice is not possible");
           console.log(err);
-          error = err;
+          expect(err).to.be.an("Error");
         }
-        expect(error).to.be.an("Error");
       }
 
       // expect undefined value from calling requestAgainFunds
@@ -90,7 +89,7 @@ describe("CrowdFundRequestFunds", function () {
       assert(accountIsElligibleBool);
 
       // account2 requests funds to our smart contract
-      await crowdFundContract.connect(account2).requestFunds(fundsRequested);
+      await crowdFundContract.connect(addr2).requestFunds(fundsRequested);
 
       // obtain creator data structure from our smart contract
       creator = await crowdFundContract.addressToCreatorMapping(account2);
@@ -105,12 +104,12 @@ describe("CrowdFundRequestFunds", function () {
       const account3 = await addr3.getAddress();
       const notElligibleRequestFunds = async () => {
         try {
-          await crowdFundContract.connect(account3).requestFunds(fundsRequested);
-        } catch(error) {
+          await crowdFundContract.connect(addr3).requestFunds(fundsRequested);
+        } catch(err) {
           console.log("creator is not allowed to request funds by smart contract owner");
-          console.log(error);
+          console.log(err);
+          expect(err).to.be.an("Error");
         }
-        expect.apply(error).to.be.an("Error");
       }
       
       expectUndefined = await notElligibleRequestFunds();
@@ -132,21 +131,19 @@ describe("CrowdFundRequestFunds", function () {
 
       // assert that request fund period has already finished
       const requestFundsPeriodEndedBool = await crowdFundContract.requestFundsEnded();
-      assert(requestFundsPeriodEnded);
+      assert(requestFundsPeriodEndedBool);
       
       const requireFundsOutPeriod = async () => {
         try {
-          await crowdFundContract.connect(account3).requestFunds(fundsRequested);
-        } catch(error) {
+          await crowdFundContract.connect(addr3).requestFunds(fundsRequested);
+        } catch(err) {
           console.log("requesting funds period has already passed");
-          console.log(error);
+          console.log(err);
+          expect(err).to.be.an("Error");
         }
-        expect.apply(error).to.be.an("Error");
       }
-    });
-
-    expectUndefined = await requireFundsOutPeriod();
-    expect(expectUndefined).to.be.an("Error");
-    //
+    
+      expectUndefined = await requireFundsOutPeriod();
+      expect(expectUndefined).to.be.an("undefined");
   });
-  
+}); 
