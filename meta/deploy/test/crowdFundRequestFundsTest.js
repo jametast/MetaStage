@@ -105,7 +105,7 @@ describe("CrowdFundRequestFunds", function () {
       const account3 = await addr3.getAddress();
       const notElligibleRequestFunds = async () => {
         try {
-          await crowdFundContract.connect(account3);
+          await crowdFundContract.connect(account3).requestFunds(fundsRequested);
         } catch(error) {
           console.log("creator is not allowed to request funds by smart contract owner");
           console.log(error);
@@ -116,6 +116,8 @@ describe("CrowdFundRequestFunds", function () {
       expectUndefined = await notElligibleRequestFunds();
       expect(expectUndefined).to.be.an("undefined");
 
+      // give permissions to addr3
+      await crowdFundContract.connect(owner).makeCreatorElligible(account3);
 
       // we now test if request funds is not possible after request funds period
       // get current block timestamp
@@ -128,7 +130,23 @@ describe("CrowdFundRequestFunds", function () {
       // mine new block
       await ethers.provider.send("evm_mine");
 
-
+      // assert that request fund period has already finished
+      const requestFundsPeriodEndedBool = await crowdFundContract.requestFundsEnded();
+      assert(requestFundsPeriodEnded);
+      
+      const requireFundsOutPeriod = async () => {
+        try {
+          await crowdFundContract.connect(account3).requestFunds(fundsRequested);
+        } catch(error) {
+          console.log("requesting funds period has already passed");
+          console.log(error);
+        }
+        expect.apply(error).to.be.an("Error");
+      }
     });
+
+    expectUndefined = await requireFundsOutPeriod();
+    expect(expectUndefined).to.be.an("Error");
+    //
   });
   
