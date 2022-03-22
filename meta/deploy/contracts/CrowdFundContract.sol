@@ -103,34 +103,24 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         allowedFundingTokens[address(0)] = true;
     }
 
-
-    function getStartTimeRequestFunds() public view returns(uint256) {
-        return startTimeRequestFunds;
-    }
-
-    // returns variable endTime
-    function getEndTimeRequestFunds() public view returns(uint256) {
-        return endTimeRequestFunds;
-    }
-
     // public view to check if start time to request funds already passed
     function requestFundsStarted() public view returns(bool) {
-        return startTimeRequestFunds < block.timestamp;
+        return startTimeRequestFunds <= block.timestamp;
     }
 
     // public view to check if end time to request funds already passed
     function requestFundsEnded() public view returns(bool) {
-        return endTimeRequestFunds < block.timestamp;
+        return endTimeRequestFunds <= block.timestamp;
     }  
 
     // public view to check if start time to request funds already passed
     function crowdFundStarted() public view returns(bool) {
-        return startTimeCrowdFund < block.timestamp;
+        return startTimeCrowdFund <= block.timestamp;
     }
 
     // public view to check if end time to request funds already passed
     function crowdFundEnded() public view returns(bool) {
-        return endTimeCrowdFund < block.timestamp;
+        return endTimeCrowdFund <= block.timestamp;
     }
 
     // modifier to check if we are at request funds period
@@ -219,7 +209,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     // function overload to account for possible different fund tokens on the protocol
     function fund(uint256 _amount, address _tokenFundAddress, address _wallet) public payable {
         // require that we are into the crowd fund period
-        require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
+        require(startTimeCrowdFund <= block.timestamp && block.timestamp <= endTimeCrowdFund, "Not in crowd fund phase");
         // given ERC20 address, in which user wants to lock his funds (say ETH, USDT, LINK, ...), is allowed by the protocol
         require(isTokenAllowed(_tokenFundAddress), "Locked funds not allowed in this token");
 
@@ -281,9 +271,9 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     // as detailed description of the project working on
     function requestFunds(uint256 _amount) public {
         // require that funds are requested between startTimeRequestFunds and endTimeRequestFunds period
-        require(startTimeRequestFunds < block.timestamp && block.timestamp < endTimeRequestFunds, "Out of request funds phase");
+        require(startTimeRequestFunds <= block.timestamp && block.timestamp <= endTimeRequestFunds, "Out of request funds phase");
         // require minimum fund value
-        require(_amount > minFundValue, "Requested amount must be bigger than zero");
+        require(_amount > minFundValue, "Requested amount must be bigger than minimum fundable value");
         // check if creator is elligible, that is it already minted NFT art cover on platform, etc
         require(isCreatorElligible(msg.sender), "Creator is not elligible to request funds");
         
