@@ -72,11 +72,19 @@ class Users {
             throw new Error("User not exist");
         }
 
+        let {name, profileImageUrl, twitter, fb, linkedIn, youTube, portfolioSite} = userData;
+
         let queryParams = {
             Item: {
-                userData
+                name: name,
+                profileImage: profileImageUrl,
+                twitterId: twitter,
+                facebookId: fb,
+                linkedInId: linkedIn,
+                youTubeId: youTube,
+                portfolioWebsite: portfolioSite
             },
-            TableName: "user_credentials",
+            TableName: "users",
             KeyConditionExpression: "userId = :userId",
             ExpressionAttributeValues: {
                 ':userId': userData.userId

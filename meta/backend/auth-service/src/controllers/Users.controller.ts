@@ -2,8 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import UsersService from "../services/Users.service";
 import { apiErrorHandler } from "../handlers/error.handler";
 
+
+
 export default class UsersCtrl {
-    constructor() {}
+    constructor() {   
+    }
 
     // Find all users, or one user if public Address provided
     async findUser(req: Request, res: Response, next: NextFunction): Promise<any> {
