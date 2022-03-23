@@ -16,7 +16,6 @@ class Users {
 
         const { KeyConditionExpression, ExpressionAttributeValues } = this.getQueryConditions(publicAddress);
 
-        
         const queryParams: IQueryParams = {
             TableName: "user_credentials",
             KeyConditionExpression,
@@ -69,7 +68,7 @@ class Users {
     async updateUser(userData: any): Promise<any> {
         let user = await this.findUser(userData.publicAddress);
         if (!user) {
-            throw new Error("User not exist");
+            throw new Error("User does not exist");
         }
 
         let {name, profileImageUrl, twitter, fb, linkedIn, youTube, portfolioSite} = userData;
