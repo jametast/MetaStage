@@ -83,7 +83,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         // min value of funds to lock, in order to use the contract
         minFundValue = _minFundValue;
         // start time to request funds should be after constructor is invoked
-        require(_startTimeRequestFunds > block.timestamp, "Votation starting time already in the past");
+        require(_startTimeRequestFunds >= block.timestamp, "Votation starting time already in the past");
         // start time to request funds should be prior to end time to request funds
         require(_startTimeRequestFunds < _endTimeRequestFunds, "Invalid request funds period");
         // users can only lock funds into the crowd fund contract after period to request funds has finished

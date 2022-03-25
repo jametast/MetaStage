@@ -39,6 +39,7 @@ const getCrowdFundContract = async (): Promise<Contract> => {
     );
     
     await crowdFundContract.deployed();
+    
     return crowdFundContract;
 }
 
