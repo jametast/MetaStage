@@ -2,11 +2,12 @@
 
 pragma solidity ^0.8.0;
 
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
 
 // TODO: make math convertion
 // each amount should be valued in wei
@@ -39,7 +40,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         address payable wallet;
         uint256 requestedFunds;
         uint256 totalFunds;
-        address[] fanClub;
+        address payable[] fanClub;
     }
 
     uint256 public minFundValue;            // we require a certain minimum amount to be locked in our smart contract, in order to use it
@@ -58,6 +59,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     mapping(address => Creator) public addressToCreatorMapping;         // mapping pubkey => creator structure
     mapping(address => bool) public elligibleCreatorsAddressMapping;    // mapping to store which creators are elligible (have art cover NFT available on platform, etc)
     mapping(address => address) public tokenPriceFeedMapping;           // mapping that associates to each token address its Chainlink V3Aggregator price feed
+    mapping(address => bool) public creatorGotFundedMapping;            // mapping that keeps track if a creator already got funded
 
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
@@ -162,15 +164,19 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     // and associate such funds to a given creator. This amount is locked into
     // the current contract until crowd fund is over. 
     // We need OpenZeppelin nonReentrant safety guard against possible reentrant attacks 
-    function fund(uint256 _amount, address _wallet) nonReentrant public payable {
+    function fund(address _wallet) nonReentrant public payable {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
-       
-        // Require that msg.sender has enough funds
+
+        // console.log msg.value
+        console.log("user funded value is: ");
+        console.log(uint256(msg.value));
+
+        // Require that msg.sender has enough funds to interact with our protocol
         require(uint256(msg.sender.balance) > minFundValue, "User has not enought ETH to fund project");
         // require that amount is bigger than the min value required by our protocol, 
         // this should be bigger than protocol fee fundValue + gas on the message transaction msg.value
-        require(uint256(msg.value) > minFundValue, "Funded amount must be bigger than zero");
+        require(uint256(msg.value) > minFundValue, "Funded amount must be bigger than mininum value required");
         // Require that public key of creator is valid
         require(creatorsMapping[_wallet], "Creator's public address is unrecognized");
         // Require that creator is elligible, (that is, minted art cover NFT at the platform, etc)
@@ -199,7 +205,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         // we update the creator total funds variable
         creator.totalFunds += uint256(msg.value) - minFundValue;
         // we update the array containing users that contributed with funds to creator with msg.sender
-        creator.fanClub.push(msg.sender);
+        creator.fanClub.push(payable(msg.sender));
     }
 
     // a user is allowed to lock a certain amount of available ERC20 tokens 
@@ -250,7 +256,8 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         // we update the creator total funds variable
         creator.totalFunds += fundValue - minFundValue;
         // we update the array containing users that contributed with funds to creator with msg.sender
-        creator.fanClub.push(msg.sender);
+        uint256 fanClubLength = creator.fanClub.length;
+        creator.fanClub[fanClubLength] = payable(msg.sender);
     }
 
     function isTokenAllowed(address _address) private returns(bool) {
@@ -280,7 +287,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         // update creatorsMapping to true on current creator wallet
         creatorsMapping[msg.sender] = true;
         // instantiate a dynamic empty array of addresses
-        address[] memory fanClub;
+        address payable[] memory fanClub = new address payable[](0);
         // encapsulate data into a Creator structure instance
         Creator memory creator = Creator(payable(msg.sender), _amount, 0, fanClub);    // when requesting funds, we assume it is the first time creator does so, therefore its total funded value should be 0
         // update addressToCreatorMapping
@@ -321,7 +328,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         require(elligibleCreatorsAddressMapping[_wallet], "Creator is not elligible");
         uint256 totalFunds = computeTotalFunds(_wallet);
         uint256 requestedFunds = computeRequestedFunds(_wallet);
-        return requestedFunds < totalFunds;
+        return requestedFunds <= totalFunds;
     }
     
     // implements logic to fund creators if these are elligible and
@@ -333,10 +340,15 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         require(creatorsMapping[_wallet], "Unrecognized public wallet");
         // check if creator is both elligible and obtained enough funds from the crowd fund
         require(creatorProjectApproved(_wallet), "Unfortunately, creator did not obtained enough funds");
+        // make sure that this is the first time a creator requests funds
+        require(!creatorGotFundedMapping[_wallet], "Creator already got funds from contract");
+        // update creatorGotFundedMapping accordingly
+        creatorGotFundedMapping[_wallet] = true;
+        
         // creator's structure instance
         Creator memory creator = addressToCreatorMapping[_wallet];
         // users that voted for creator's project
-        address[] memory fanClub = creator.fanClub;
+        address payable[] memory fanClub = creator.fanClub;
         // we loop over each user that voted for creator's project
         // check which token did the user locked his funds
         // send those funds locked at the present smart contract
@@ -360,6 +372,12 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
                 token.transferFrom(address(this), _wallet, totalLockedAmount);
             }
         }
+    }
+
+    function retrieveFanClubFromCreator(address wallet, uint256 index) public returns(address payable) {
+        Creator memory creator = addressToCreatorMapping[wallet];
+        require(index < creator.fanClub.length, "index is too big");
+        return creator.fanClub[index];
     }
 
     // implements logic to refund users that voted for creator's projects

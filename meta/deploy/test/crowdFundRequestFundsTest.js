@@ -36,9 +36,7 @@ describe("CrowdFundRequestFunds", function () {
 
       // get addr1 public key
       const account1 = await addr1.getAddress();
-      // addr1 ETH balance
-      let balanceOfAccount = await ethers.provider.getBalance(account1);
-
+     
       // define funds to be requested
       let fundsRequested = ethers.utils.parseEther('1.0');
 
