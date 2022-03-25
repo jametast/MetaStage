@@ -30,6 +30,9 @@ describe("CrowdFundContractTimeLine", function () {
         // for the moment we only allow funding in ETH
         const allowedFundingTokens: string[] = [] 
         
+        console.log(currentBlockTimestamp);
+        console.log(startRequestFunds);
+        console.log((await ethers.provider.getBlock(-1))['timestamp']);
         // deploy Crowd Funding contract
         
         const crowdFundContract = await CrowdFundContract.deploy(

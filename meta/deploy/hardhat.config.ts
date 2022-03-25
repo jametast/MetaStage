@@ -1,4 +1,5 @@
 import { task } from "hardhat/config";
+import { HardhatUserConfig } from "hardhat/types";
 import "@nomiclabs/hardhat-waffle";
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -17,6 +18,11 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-module.exports = {
-  solidity: "0.8.4",
+
+const config: HardhatUserConfig = {
+  solidity: {
+    compilers: [{ version: "0.6.8", settings: {} }],
+  },
 };
+
+export default config;
