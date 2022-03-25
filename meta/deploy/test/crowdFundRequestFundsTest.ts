@@ -12,6 +12,8 @@ describe("CrowdFundRequestFunds", function () {
       // get current block timestamp
       let currentBlockTimestamp: number = await getCurrentBlockTimestamp();
 
+      console.log(currentBlockTimestamp);
+      
       // get start time of request funds period
       const startTimeRequestFunds: number = await crowdFundContract.startTimeRequestFunds();
       // get end time of request funds period

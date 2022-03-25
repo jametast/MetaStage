@@ -18,13 +18,13 @@ describe("CrowdFundContractTimeLine", function () {
         // get current timestamp in seconds 
         const nowInSeconds: number = currentBlockTimestamp + 1 // prior, we were testing it with date now method:  Math.floor(Date.now() / 1000);
         // starts in 2 minutes
-        const startRequestFunds: number = nowInSeconds + 60 * 2 
+        const startRequestFunds: number = nowInSeconds + 120 * 2 
         // requesting funds will have a duration of 5 minutes
-        const endRequestFunds: number = nowInSeconds + 60 * (2 + 5) 
+        const endRequestFunds: number = nowInSeconds + 120 * (2 + 5) 
         // crowd funding starts 1 minute laters
-        const startCrowdFund: number = nowInSeconds + 60 * (2 + 5 + 1) 
+        const startCrowdFund: number = nowInSeconds + 120 * (2 + 5 + 1) 
         // crow fundings lasts for 10 minutes
-        const endCrowdFund: number = nowInSeconds + 60 * (2 + 5 + 1 + 10) 
+        const endCrowdFund: number = nowInSeconds + 120 * (2 + 5 + 1 + 10) 
         // 0.001 ETH = 1e15 Wei
         const minFundValue: number = 1000000000000000; 
         // for the moment we only allow funding in ETH
