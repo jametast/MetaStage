@@ -31,6 +31,7 @@ describe("CrowdFundContractTimeLine", function () {
         const allowedFundingTokens: string[] = [] 
         
         // deploy Crowd Funding contract
+        
         const crowdFundContract = await CrowdFundContract.deploy(
             minFundValue, 
             allowedFundingTokens, 
