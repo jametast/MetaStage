@@ -1,6 +1,6 @@
 import { expect, assert } from "chai";
 import { ethers } from "hardhat";
-import { BigNumber, Contract, providers, Signer } from "ethers";
+import { BigNumber, Contract, Signer } from "ethers";
 import { getCrowdFundContract, getCurrentBlockTimestamp } from "./deployTest";
 
 
