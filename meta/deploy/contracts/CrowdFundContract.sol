@@ -139,6 +139,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
 
     // public view that checks how much time is left until request funds period is finished
     function getTimeLeftRequestFunds() public requestFundsTimerOver view returns(uint256) {
+        console.log(block.timestamp);
         return endTimeRequestFunds - block.timestamp;
     }
 

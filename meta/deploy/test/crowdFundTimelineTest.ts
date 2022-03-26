@@ -8,10 +8,8 @@ describe("CrowdFundContractTimeLine", function () {
         // get contract factory
         const CrowdFundContract: ContractFactory = await ethers.getContractFactory("CrowdFundContract");
         
-        // get latest block number
-        let blockNumber: number = ethers.provider.blockNumber;
         // get current block data
-        let currentBlockData: providers.Block = await ethers.provider.getBlock(blockNumber);
+        let currentBlockData: providers.Block = await ethers.provider.getBlock("latest");
         // get current block timestamp
         let currentBlockTimestamp: number = currentBlockData["timestamp"];
         
@@ -32,7 +30,7 @@ describe("CrowdFundContractTimeLine", function () {
         
         // deploy Crowd Funding contract
         
-        const crowdFundContract = await CrowdFundContract.deploy(
+        const crowdFundContract: Contract = await CrowdFundContract.deploy(
             minFundValue, 
             allowedFundingTokens, 
             startRequestFunds, 
@@ -87,10 +85,8 @@ describe("CrowdFundContractTimeLine", function () {
         expectUndefined = await getTimeLeftCrowdFund();
         expect(expectUndefined).to.be.a("undefined");
 
-        // get latest block number
-        blockNumber = ethers.provider.blockNumber;
         // get current block data
-        currentBlockData = await ethers.provider.getBlock(blockNumber);
+        currentBlockData = await ethers.provider.getBlock("latest");
         // get current block timestamp
         currentBlockTimestamp = currentBlockData["timestamp"];
         
@@ -117,26 +113,21 @@ describe("CrowdFundContractTimeLine", function () {
 
         // testing getTimeLeftRequestFunds() method
         const timeLeftRequestFunds: BigNumber = await crowdFundContract.getTimeLeftRequestFunds();
-        console.log(timeLeftRequestFunds);
 
-        // get latest block number
-        blockNumber = ethers.provider.blockNumber;
         // get current block data
-        currentBlockData = await ethers.provider.getBlock(blockNumber);
+        currentBlockData = await ethers.provider.getBlock("latest");
         // get current block timestamp
         currentBlockTimestamp = currentBlockData["timestamp"];
         
         // get number of seconds from current block timstamp to end request funds time 
-        const endRequestFundsToCurrentTimeBlock: number = endRequestFunds - currentBlockTimestamp;
-        
+        const endRequestFundsToCurrentTimeBlock: BigNumber = BigNumber.from(endRequestFunds - currentBlockTimestamp);
         console.log(endRequestFundsToCurrentTimeBlock);
+        console.log(timeLeftRequestFunds)
         // assert timeLeftRequestFunds == endRequestFundsToCurrentTimeBlock
-        assert(endRequestFundsToCurrentTimeBlock == timeLeftRequestFunds);
+        assert(endRequestFundsToCurrentTimeBlock.eq(timeLeftRequestFunds));
         
-        // get latest block number
-        blockNumber = ethers.provider.blockNumber;
         // get current block data
-        currentBlockData = await ethers.provider.getBlock(blockNumber);
+        currentBlockData = await ethers.provider.getBlock("latest");
         // get current block timestamp
         currentBlockTimestamp = currentBlockData["timestamp"];
         
@@ -169,10 +160,8 @@ describe("CrowdFundContractTimeLine", function () {
         expectUndefined = await getTimeLeftCrowdFund();
         expect(expectUndefined).to.be.a("undefined");
 
-        // get latest block number
-        blockNumber = ethers.provider.blockNumber;
         // get current block data
-        currentBlockData = await ethers.provider.getBlock(blockNumber);
+        currentBlockData = await ethers.provider.getBlock("latest");
         // get current block timestamp
         currentBlockTimestamp = currentBlockData["timestamp"];
          
@@ -205,10 +194,8 @@ describe("CrowdFundContractTimeLine", function () {
         // test getTimeLeftCrowdFund() method
         const timeLeftCrowdFund: number = await crowdFundContract.getTimeLeftCrowdFund();
 
-        // get latest block number
-        blockNumber = ethers.provider.blockNumber;
         // get current block data
-        currentBlockData = await ethers.provider.getBlock(blockNumber);
+        currentBlockData = await ethers.provider.getBlock("latest");
         // get current block timestamp
         currentBlockTimestamp = currentBlockData["timestamp"];
         
@@ -218,12 +205,10 @@ describe("CrowdFundContractTimeLine", function () {
         // assert timeLeftRequestFunds == endRequestFundsToCurrentTimeBlock
         assert(endCrowdFundToCurrentBlockTimestamp == timeLeftCrowdFund);
         
-        // get latest block number
-        blockNumber = ethers.provider.blockNumber;
         // get current block data
-        currentBlockData = await ethers.provider.getBlock(blockNumber);
+        currentBlockData = await ethers.provider.getBlock("latest");
         // get current block timestamp
-        currentBlockTimestamp = await currentBlockData["timestamp"];
+        currentBlockTimestamp = currentBlockData["timestamp"];
          
         // we pass forward time to start requesting funds
         increaseTimeInSeconds = endCrowdFund - currentBlockTimestamp + 1;
