@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -162,7 +163,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     // and associate such funds to a given creator. This amount is locked into
     // the current contract until crowd fund is over. 
     // We need OpenZeppelin nonReentrant safety guard against possible reentrant attacks 
-    function fund(uint256 _amount, address _wallet) nonReentrant public payable {
+    function fund(address _wallet) nonReentrant public payable {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
        
@@ -189,7 +190,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         // Lock funds from user into the current smart contract
         // Locked funds will correspond to the value of msg.value
         // however the amount funded to given creator corresponds to msg.value - minFundValue
-        // These funds will be then distributed to the chosen creator, given that creator obtained enough funds
+        // TheseF funds will be then distributed to the chosen creator, given that creator obtained enough funds
         // we require that the transaction was correctly processed
         
         // user data is pushed to usersArray
@@ -318,10 +319,11 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     // returns true if creators obtained more crowd funds than his requested amount
     function creatorProjectApproved(address _wallet) public returns(bool) {
         // require that public address corresponds to an elligible creator
+        console.log(_wallet);
         require(elligibleCreatorsAddressMapping[_wallet], "Creator is not elligible");
         uint256 totalFunds = computeTotalFunds(_wallet);
         uint256 requestedFunds = computeRequestedFunds(_wallet);
-        return requestedFunds < totalFunds;
+        return requestedFunds <= totalFunds;
     }
     
     // implements logic to fund creators if these are elligible and
@@ -376,13 +378,14 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
             // to the present smart contract
             address tokenAddress = user.tokenFund;
             // get creator's public key
-            address wallet = user.creatorWallet;
+            address payable wallet = user.wallet;
             // if creator's project was not approved
             // we refund user with the funds amount user locked
-            if (!creatorProjectApproved(wallet)) {
+            if (!creatorProjectApproved(user.creatorWallet)) {
                 // is user funded creator with plain ETH we use the call method to make the transfer
                 if (tokenAddress == address(0)) {
-                    wallet.call{value: user.totalLockedAmount - minFundValue}("");
+                    wallet.send(user.totalLockedAmount - minFundValue);
+                    // wallet.call{value: user.totalLockedAmount - minFundValue}("");
                 } else {
                     // user instead opted for funding with some valid ERC20 token
                     // get the IERC20 token out of tokenAddress
