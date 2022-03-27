@@ -121,7 +121,7 @@ describe("CrowdFundContractTimeLine", function () {
         
         // get number of seconds from current block timstamp to end request funds time 
         const endRequestFundsToCurrentTimeBlock: BigNumber = BigNumber.from(endRequestFunds - currentBlockTimestamp);
-        
+    
         // assert timeLeftRequestFunds == endRequestFundsToCurrentTimeBlock
         assert(endRequestFundsToCurrentTimeBlock.eq(timeLeftRequestFunds));
         

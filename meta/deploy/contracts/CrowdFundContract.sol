@@ -169,10 +169,6 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
 
-        // console.log msg.value
-        console.log("user funded value is: ");
-        console.log(uint256(msg.value));
-
         // Require that msg.sender has enough funds to interact with our protocol
         require(uint256(msg.sender.balance) > minFundValue, "User has not enought ETH to fund project");
         // require that amount is bigger than the min value required by our protocol, 
@@ -395,7 +391,9 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
             // to the present smart contract
             address tokenAddress = user.tokenFund;
             // get creator's public key
-            address wallet = user.creatorWallet;
+            address wallet = user.wallet;
+            console.log(wallet);
+            console.log(tokenAddress);
             // if creator's project was not approved
             // we refund user with the funds amount user locked
             if (!creatorProjectApproved(wallet)) {
