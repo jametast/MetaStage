@@ -392,11 +392,9 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
             address tokenAddress = user.tokenFund;
             // get creator's public key
             address wallet = user.wallet;
-            console.log(wallet);
-            console.log(tokenAddress);
             // if creator's project was not approved
             // we refund user with the funds amount user locked
-            if (!creatorProjectApproved(wallet)) {
+            if (!creatorProjectApproved(user.creatorWallet)) {
                 // is user funded creator with plain ETH we use the call method to make the transfer
                 if (tokenAddress == address(0)) {
                     wallet.call{value: user.totalLockedAmount - minFundValue}("");

@@ -102,33 +102,9 @@ describe("CrowdFundRefundUsers", function () {
         const newUserBalance1: BigNumber = await user1.getBalance();
         const newUserBalance2: BigNumber = await user2.getBalance();
         const newUserBalance3: BigNumber = await user3.getBalance();
-        
-        console.log("---------------");
-        console.log(userAddress1);
-        console.log(userAddress2);
-        console.log(userAddress3);
-        console.log("---------------");
 
-        console.log("---------------");
-        console.log(newUserBalance1);
-        console.log(userBalance1);
-        console.log(fundsUser1);
-        console.log("---------------");
-
-        console.log("---------------");
-        console.log(newUserBalance1);
-        console.log(userBalance2);
-        console.log(fundsUser2);
-        console.log("---------------");
-
-        console.log("---------------");
-        console.log(newUserBalance3);
-        console.log(userBalance3);
-        console.log(fundsUser3);
-        console.log("---------------");
-
-        assert(newUserBalance1.eq(userBalance1.add(fundsUser1)));
-        assert(newUserBalance2.eq(userBalance2.add(fundsUser2)));
+        assert(newUserBalance1.eq(userBalance1.add(fundsUser1).sub(ethers.utils.parseEther('0.01'))));
+        assert(newUserBalance2.eq(userBalance2.add(fundsUser2).sub(ethers.utils.parseEther('0.01'))));
         assert(newUserBalance3.eq(userBalance3));
     });
 });
