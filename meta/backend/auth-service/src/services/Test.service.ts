@@ -69,8 +69,6 @@ class TestData {
 		} else {
             throw new Error(`Signature verification failed`);
         }
-
-        return null;
     }
 
     private async generateNewNonce(user) {
@@ -87,8 +85,8 @@ class TestData {
 
         try {
             let result = await docClient.put(params).promise();
-            user.Items[0].nonce = nonce;
-            user.Items[0].lastLogIn = "23:00:00";
+            result.Items[0].nonce = nonce;
+            result.Items[0].lastLogIn = "23:00:00";
             return user;
         } catch (error) {
             throw new Error(`Nonce generation failed`);
