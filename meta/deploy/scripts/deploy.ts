@@ -1,6 +1,6 @@
 import "hardhat";
 import { ethers } from "hardhat";
-import { BigNumber, Contract, ContractFactory, providers, Signer } from "ethers";
+import { BigNumber, Contract, ContractFactory, providers, Signer, utils } from "ethers";
 import { getContractFactory } from "hardhat/types";
 import { getCrowdFundContract } from "../test/deployTest";
 import * as dotenv from "dotenv";
@@ -13,11 +13,36 @@ async function deploy(
     endRequestFunds: number, 
     startCrowdFund: number, 
     endCrowdFund: number,
-) {
-    const privateKey: string | undefined = process.env.RINKEY_PRIVATE_KEY;
-    const provider: providers = ;
-    const CrowdFundContract: ContractFactory = await ethers.getContractFactory("CrowdFundContract");
-    const owner: Signer = new ethers.Wallet(privateKey, provider);
+    network? : string | undefined
+): Promise<[Contract, Signer]> {
+
+    var privateKey: utils.BytesLike = "";   // need to declare var to be able to pass between outer/inner scopes
+    var provider: providers.Provider;       // need to declare var to be able to pass between outer/inner scopes
+    var wallet: Signer;                     // need to declare var to be able to pass between outer/inner scopes
+
+    if (network == "rinkeby") {
+        privateKey = process.env.RINKEBY_PRIVATE_KEY ? process.env.RINKEBY_PRIVATE_KEY: "0x0/";
+        provider = ethers.providers.getDefaultProvider("rinkeby", process.env.RINKEBY_URL);
+        wallet = new ethers.Wallet(privateKey, provider)
+    } else if (network == "ropsten") {
+        privateKey = process.env.ROPSTEIN_PRIVATE_KEY ? process.env.ROPSTEIN_PRIVATE_KEY: "0x0";
+        provider = ethers.providers.getDefaultProvider("ropsten", process.env.ROPSTEN_URL);
+        wallet  = new ethers.Wallet(privateKey, provider);
+    } else if (network == "polygon mumbai") {
+        privateKey = process.env.POLYGON_MUMBAI_PRIVATE_KEY ? process.env.POLYGON_MUMBAI_PRIVATE_KEY: "0x0";
+        // const signKey: utils.SigningKey = new ethers.utils.SigningKey(privateKey);
+        provider = ethers.providers.getDefaultProvider("polygon_mumbai", process.env.POLYGON_MUMBAI_URL);
+        wallet = new ethers.Wallet(privateKey, provider);
+    } else {
+        [ wallet ] = await ethers.getSigners();
+        provider= ethers.providers.getDefaultProvider();
+    } 
+
+    if (privateKey === "0x0") {
+        throw Error("private key not provided");
+    }
+    
+    const CrowdFundContract: ContractFactory = await ethers.getContractFactory("CrowdFundContract", wallet);
     const crowdFundContract: Contract = await CrowdFundContract.deploy(
         minFundValue,
         allowedFundingTokens,
@@ -28,6 +53,8 @@ async function deploy(
     );
 
     await crowdFundContract.deployed();
+
+    return [ crowdFundContract, wallet ];
 }
 
 // refactor this function
