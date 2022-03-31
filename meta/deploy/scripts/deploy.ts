@@ -4,6 +4,7 @@ import { BigNumber, Contract, ContractFactory, providers, Signer, utils } from "
 import { getContractFactory } from "hardhat/types";
 import { getCrowdFundContract } from "../test/deployTest";
 import * as dotenv from "dotenv";
+import { start } from "repl";
 
 
 async function deploy(
@@ -53,11 +54,28 @@ async function deploy(
     );
 
     await crowdFundContract.deployed();
+    console.log("Crowd fund contract deployed at: ", crowdFundContract.address);
 
     return [ crowdFundContract, wallet ];
 }
 
-// refactor this function
-async function getDeployedContract(crowdFundContract: Contract): Promise<Contract> {
-    return crowdFundContract;
+
+async function main() {
+    const minFundValue: BigNumber = ethers.utils.parseEther("0.1");
+    const allowedFundingTokens: string[] = [];
+    const startRequestFunds: number = Math.floor(Date.now() / 1000);
+    const endRequestFunds: number = startRequestFunds + 60 * 60 * 24 * 2; // 2 days total of request funds period
+    const startCrowdFund: number = endRequestFunds + 60 * 60 * 24 * 1;    // 1 day total of pause between request funds period
+    const endCrowdFund: number = startCrowdFund + 60 * 60 * 24 * 2;       // w days total of crowd fund period
+
+    const [ crowdFundContract, wallet ]: [ Contract, Signer ] = await  deploy(minFundValue, allowedFundingTokens, startRequestFunds, 
+                                                                              endRequestFunds, startCrowdFund, endCrowdFund);
 }
+
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+      console.log(error);
+      process.exit(1);
+  });
