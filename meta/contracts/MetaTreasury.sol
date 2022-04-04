@@ -4,101 +4,108 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/interfaces/AggregatorV3interface.sol";
 
 
 contract MetaTreasury is Ownable {
-    address[] public stageHolders;
-    address[] public creators;
-    uint256 minValueProtocol;
-    mapping(address => uint256) public stageHoldersTreasury;
-    mapping(address => uint256) public creatorsRequestedFunds;
-    mapping(address => address) public votingMap;
-    mapping(address => bool) public creatorObtainedRequestedFunds; 
-    mapping(address => uint256) public totalFundsForCreators;
-    IERC20 private stageToken;
-    bool private votingHasOccurred;
-    bool private inVotePeriod;
-
-
-    constructor(address _dAppTokenAddress) public {
-        stageToken = IERC20(_dAppTokenAddress);
-        minValueProtocol = 10;
-        inVotePeriod = false;
-    }
     
-    function depositFunds(uint256 _amount) public {
+    bool public startVotation;
+    bool public endVotation;
+    uint256 public minFundValue;
+    uint256 public start;
+    uint256 public end;
+    mapping(address => bool) public usersMapping;
+    mapping(address => bool) public creatorsMapping;
+    mapping(address => bool) public allowedFundableTokens;
+    mapping(address => uint256) public usersLockedFundsMapping;
+    mapping(address => address) public userAllowedTokenMapping;
+    mapping(address => uint256) public creatorsFundsMapping;
+    mapping(address => bool) public creatorsFundedProjectsMapping;
+    mapping(address => uint256) public creatorTotalFundsMapping;
+    mapping(address => address[]) public creatorVotesMapping;
+
+
+    constructor(uint256 _minFundValue, address[] _allowedFundableTokens) public {
+        start = False;
+        end = False;
+        minFundValue = _minFundValue;
+        for (uint256 index; index < _allowedFundableTokens.length(); index++) {
+            address token = _allowedFundableTokens[index];
+            allowedFundableTokens[token] = true;
+        }
+    }
+
+    function fund(uint256 _amount, address _toFundAddress) public {
+        requireVotationTimeline();
         require(_amount > 0, "Funded amount must be bigger than zero");
-        require(stageToken.balanceOf(msg.sender) > _amount + minValueProtocol, "User must have enough funds");
-        require(!treasuryContainsUser(msg.sender), "User already deposited funds");
-        stageHoldersTreasury[msg.sender] = _amount;
-        stageHolders.push(msg.sender);
-        stageToken.transferFrom(msg.sender, address(this), _amount); // funds are transferred to the treasury
+        require(isTokenAllowed(_toFundAddress), "Locked funds not allowed in this token");
+        require(userHasLockedFunds(msg.sender), "User already locked funds");
+        usersMapping[msg.sender] = True;
+        usersLockedFundsMapping[msg.sender] = _amount;
+        userAllowedTokenMapping[msg.sender] = _toFundAddress;
+        _toFundAddres.transferFrom(msg.sender, address(this), _amount);     // funds are locked
+    }
+
+    function isTokenAllowed(address _address) private returns(bool) {
+        return allowedFundableTokens[_address];
+    }
+
+    function userHasLockedFunds(address _wallet) public returns(bool) {
+        return usersMapping[_wallet];
     }
 
     function requestFunds(uint256 _amount) public {
+        requireVotationTimeline();
         require(_amount > 0, "Requested amount must be bigger than zero");
-        require(stageToken.balanceOf(msg.sender) > minValueProtocol, "Creator must hold enough Stage tokens in order to use the MetaStage protocol");
-        require(!creatorHasRequestFunds(msg.sender), "Creator already requested funds");
-        creatorsRequestedFunds[msg.sender] = _amount;
-        creators.push(msg.sender);
+        require(!creatorsMapping[msg.sender], "Creator already requested funds for project");
+        require(isCreatorElligible(msg.sender), "Creator is not elligible to request funds");
+        creatorsMapping[msg.sender] = true;
+        creatorVotesMapping[_wallet].push(msg.sender);
     }
 
-    function treasuryContainsUser(address wallet) public returns(bool) {
-        return stageHoldersTreasury[wallet] > 0;
+    function requireVotationTimeline() private {
+        require(start, "Votation has not yet begun");
+        require(!end, "Votation already finished");
     }
 
-    function creatorHasRequestFunds(address wallet) public returns(bool) {
-        return creatorsRequestedFunds[wallet] > 0;
-    }
-    
-    function getVoteFunding(address creatorWallet) public {
-        require(inVotePeriod, "Votation is not yet open to users");
-        require(treasuryContainsUser(msg.sender), "Invalid user");
-        require(creatorHasRequestFunds(creatorWallet), "Invalid creator");
-        votingMap[msg.sender] = creatorWallet;
+    function isCreatorElligible(address _wallet) public returns(bool) {
+        return true;
     }
 
+    function voteForProject(address _wallet) public {
+        requireVotationTimeline();
+        require(creatorsMapping[_wallet], "Unrecognized public wallet");
+        require(usersMapping[msg.sender], "Unable to vote, didn't locked funds");
+        userVoteMapping[msg.sender] = _wallet;
+        creatorsFundsMapping[_wallet] += usersLockedFundsMapping[msg.sender];
+    }
+
+    function votationHasFinished() public returns(bool) {
+        return end;
+    }
     modifier isFundable {
-        require(votingHasOccurred);
+        require(votationHasFinished);
         _;
     }
 
-    function votationHasOccurred() public {
-        votingHasOccurred = true;
+    function computeTotalFunds(address _wallet) private returns(uint256) {
+        return creatorsFundsMapping[_wallet];
     }
 
-    function computeCreatorTotalFunds() public {
-        address user;
-        address votedCreator;
+    function creatorProjectApproved(address _wallet) public returns(bool) {
+        uint256 totalFunds = computeTotalFunds(_wallet);
+        return creatorsFundsMapping[_wallet] > totalFunds;
+    }
 
-        for (uint256 creatorIndex = 0; creatorIndex < creators.length; creatorIndex++) {
-            address creator = creators[creatorIndex];
-            
-            for (uint256 userIndex = 0; userIndex < stageHolders.length; userIndex++) {
-                user = stageHolders[userIndex];
-                votedCreator = votingMap[user];
-
-                if (creator == votedCreator) {
-                    totalFundsForCreators[creator] += stageHoldersTreasury[user];
-                }
-            }
+    function fundCreators(address _wallet) payable isFundable public {
+        require(end, "Vote period is not yet finished");
+        require(creatorsFundedProjectsMapping[_wallet], "Creator did not get enough funds from community");
+        address[] fundsByUsers = creatorVotesMapping[_wallet];
+        for (uint256 i = 0; i < fundsByUsers.length; i++) {
+            address user = fundsByUsers[i];
+            address token = userAllowedTokenMapping[user];
+            token.transferFrom(address(this), _wallet, usersLockedFundsMapping[user]);
         }
     }
 
-    function obtainedRequestedFunds(address creatorWallet) public view returns (bool) {
-        return totalFundsForCreators[creatorWallet] > creatorsRequestedFunds[creatorWallet];
-    }
-
-    function fundCreators() payable isFundable public {
-        computeCreatorTotalFunds();
-        address creator;
-        for (uint256 creatorIndex; creatorIndex < creators.length; creatorIndex++) {
-            creator = creators[creatorIndex];
-            if (totalFundsForCreators[creator] > 0) {
-                stageToken.transfer(creator, totalFundsForCreators[creator]);
-            }
-        }
-        votingHasOccurred = false; // at the end 
-    }
 }
-
