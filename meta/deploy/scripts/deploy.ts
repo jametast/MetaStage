@@ -29,10 +29,10 @@ async function deploy(
         privateKey = process.env.ROPSTEIN_PRIVATE_KEY ? process.env.ROPSTEIN_PRIVATE_KEY: "0x0";
         provider = ethers.providers.getDefaultProvider("ropsten", process.env.ROPSTEN_URL);
         wallet  = new ethers.Wallet(privateKey, provider);
-    } else if (network == "polygon mumbai") {
+    } else if (network == "maticmum") {
         privateKey = process.env.POLYGON_MUMBAI_PRIVATE_KEY ? process.env.POLYGON_MUMBAI_PRIVATE_KEY: "0x0";
         // const signKey: utils.SigningKey = new ethers.utils.SigningKey(privateKey);
-        provider = ethers.providers.getDefaultProvider("polygon_mumbai", process.env.POLYGON_MUMBAI_URL);
+        provider = new ethers.providers.JsonRpcProvider(process.env.POLYGON_MUMBAI_URL);
         wallet = new ethers.Wallet(privateKey, provider);
     } else {
         [ wallet ] = await ethers.getSigners();
@@ -63,13 +63,13 @@ async function deploy(
 async function main() {
     const minFundValue: BigNumber = ethers.utils.parseEther("0.1");
     const allowedFundingTokens: string[] = [];
-    const startRequestFunds: number = Math.floor(Date.now() / 1000);
+    const startRequestFunds: number = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
     const endRequestFunds: number = startRequestFunds + 60 * 60 * 24 * 2; // 2 days total of request funds period
     const startCrowdFund: number = endRequestFunds + 60 * 60 * 24 * 1;    // 1 day total of pause between request funds period
     const endCrowdFund: number = startCrowdFund + 60 * 60 * 24 * 2;       // w days total of crowd fund period
 
     const [ crowdFundContract, wallet ]: [ Contract, Signer ] = await  deploy(minFundValue, allowedFundingTokens, startRequestFunds, 
-                                                                              endRequestFunds, startCrowdFund, endCrowdFund);
+                                                                              endRequestFunds, startCrowdFund, endCrowdFund, "maticmum");
 }
 
 

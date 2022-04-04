@@ -31,24 +31,30 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
 module.exports = {
   solidity: "0.8.4",
-  defaultNetwork: "matic",
+  defaultNetwork: "maticmum",
   networks: {
     hardhat: {
     },
-    matic: {
+    maticmum: { // polygon mumbai testnet
       url: process.env.POLYGON_MUMBAI_URL,
       accounts: process.env.POLYGON_MUMBAI_PRIVATE_KEY != undefined ?
         [process.env.POLYGON_MUMBAI_PRIVATE_KEY]: [],
+      gas: 1600000020,
+      gasPrice: 2000000000, 
+      from: process.env.POLYGON_MUMBAI_PUBLIC_KEY != undefined ? process.env.POLYGON_MUMBAI_PUBLIC_KEY: ""
     },
     rinkeby: {
-      url: process.env.RINKEBY_URL || '',
+      url: process.env.RINKEBY_URL || "",
       accounts: process.env.RINKEBY_PRIVATE_KEY != undefined ? 
         [process.env.RINKEBY_PRIVATE_KEY]: [],
     },
     ropsten: {
-      url: process.env.ROPSTEN_URL || '',
+      url: process.env.ROPSTEN_URL || "",
       accounts: process.env.ROPSTEIN_PRIVATE_KEY != undefined ?
         [process.env.ROPSTEIN_PRIVATE_KEY]: [],
     },
+    localhost: {
+      url: "http://127.0.0.1:8545"
+    }
   }
 };
