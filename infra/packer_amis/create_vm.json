@@ -1,0 +1,58 @@
+{   "variables": {
+        "git_repo": "https://github.com/jametast/MetaStage.git",
+        "ami_name": "ami-04505e74c0741db8d",
+        "ssh_user": "ubuntu"
+    },
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "region": "us-east-1",
+            "ami_name": "meta_vm",
+            "source_ami": "{{user `ami_name`}}",
+            "instance_type": "t2.micro",
+            "ssh_username": "{{user `ssh_user`}}"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "inline": [
+                "sleep 30",
+                "sudo apt update -y",
+                "sudo apt upgrade -y",
+                "sudo apt install nginx -y",
+                "sudo apt install git -y",
+                "curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -",
+                "sudo apt-get install -y nodejs",
+                "sudo npm install -g npm@8.5.4",
+                "sudo npm install -g yarn",
+                "sudo npm -g install create-react-app",
+                "sudo npm i -g typescript",
+                "sudo npm install -g @nestjs/cli",
+                "sudo npm i -g hardhat",
+                "sudo npm install --save-dev ts-node typescript",
+		        "sudo npm install --save-dev chai @types/node @types/mocha @types/chai",
+                "sudo npm install @openzeppelin/contracts",
+                "sudo npm install @chainlink/contracts --save",
+                "sudo npm install --save-dev @openzeppelin/hardhat-upgrades",
+                "sudo npm install --save-dev @nomiclabs/hardhat-ethers ethers",
+                "sudo npm i -g fastify",
+                "sudo npm root -g",
+                "sudo npm i -g ethers",
+                "sudo npm i -g node-metamask",
+                "sudo npm install aws-sdk",
+                "sudo npm i -g --save-dev @types/node",
+                "sudo apt install python3-pip -y",
+                "sudo python3 -m pip install awscli",
+                "mkdir .aws",
+                "touch ~/.aws/credentials", 
+                "echo '[default]' >> ~/.aws/credentials",
+                "echo 'aws_access_key_id=<insert-access-key-id-here>' >> ~/.aws/credentials",
+                "echo 'aws_secret_access_key=<insert-secret-access-key-here>' >> ~/.aws/credentials",
+                "mkdir dev",
+                "cd dev",
+                "git clone {{user `git_repo`}}"
+            ]
+        }
+    ]
+}
