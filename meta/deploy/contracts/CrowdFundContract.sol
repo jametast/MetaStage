@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
@@ -7,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
 
 
 // TODO: make math convertion
@@ -61,6 +61,8 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     mapping(address => address) public tokenPriceFeedMapping;           // mapping that associates to each token address its Chainlink V3Aggregator price feed
     mapping(address => bool) public creatorGotFundedMapping;            // mapping that keeps track if a creator already got funded
 
+    bool initialized = false;
+
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
     error CreatorAlreadyRequestedFunds();           // error => creators are not allowed to request funds multiple times
@@ -80,6 +82,8 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         uint256 _endTimeCrowdFund
     ) 
     onlyOwner public {
+        // minFundValue must be positive
+        require(_minFundValue > 0, "minimum fund value should be positive");
         // min value of funds to lock, in order to use the contract
         minFundValue = _minFundValue;
         // start time to request funds should be after constructor is invoked
@@ -103,6 +107,50 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         }
         // we add the 0th address, which will be useful to deal with the case where we have to transfer ETH directly
         allowedFundingTokens[address(0)] = true;
+    }
+
+    // we need to add this init call method that simulates a constructor function, but
+    // in this case is used by clones of an initial CrowdFundContract, this will allow us to deploy
+    // new crowd fund rounds more cheaply
+    function init(
+        uint256 _minFundValue, 
+        address[] memory _allowedFundingTokens, 
+        uint256 _startTimeRequestFunds, 
+        uint256 _endTimeRequestFunds,
+        uint256 _startTimeCrowdFund,
+        uint256 _endTimeCrowdFund
+    ) Ownable() public {
+        
+        // require that init has not been called yet, for the purporse of cloning
+        require(!initialized, "cloned contract already deployed");
+        // minFundValue must be positive
+        require(_minFundValue > 0, "minimum fund value should be positive");
+        // min value of funds to lock, in order to use the contract
+        minFundValue = _minFundValue;
+        // start time to request funds should be after constructor is invoked
+        require(_startTimeRequestFunds >= block.timestamp, "Votation starting time already in the past");
+        // start time to request funds should be prior to end time to request funds
+        require(_startTimeRequestFunds < _endTimeRequestFunds, "Invalid request funds period");
+        // users can only lock funds into the crowd fund contract after period to request funds has finished
+        require(_endTimeRequestFunds < _startTimeCrowdFund, "Crowd fund should start after request funds period");
+        // start time for users to crowd fund projects should be prior to end time
+        require(_startTimeCrowdFund < _endTimeCrowdFund, "Invalid crowd fund period");
+
+        startTimeRequestFunds = _startTimeRequestFunds;
+        endTimeRequestFunds = _endTimeRequestFunds;
+        startTimeCrowdFund = _startTimeCrowdFund;
+        endTimeCrowdFund = _endTimeCrowdFund;
+
+        // store into a mapping available ERC20 tokens to fund projects
+        for (uint256 index; index < _allowedFundingTokens.length; index++) {
+            address token = _allowedFundingTokens[index];
+            allowedFundingTokens[token] = true;
+        }
+        // we add the 0th address, which will be useful to deal with the case where we have to transfer ETH directly
+        allowedFundingTokens[address(0)] = true;
+
+        // update initialized variable
+        initialized = true;
     }
 
     // public view to check if start time to request funds already passed

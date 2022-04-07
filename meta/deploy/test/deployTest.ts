@@ -44,10 +44,49 @@ const getCrowdFundContract = async (): Promise<Contract> => {
 }
 
 
+const getCrowdFundFactoryContract = async (): Promise<Contract> => {
+    const CrowdFundFactoryContract: ContractFactory = await ethers.getContractFactory("CrowdFundContractFactory");
+    await ethers.provider.send("evm_mine", []);
+
+    // get current block data
+    let currentBlockData: providers.Block = await ethers.provider.getBlock("latest");
+    // get current block timestamp
+    let currentBlockTimestamp: number = currentBlockData["timestamp"];
+    
+    // get current timestamp in seconds
+    const nowInSeconds: number = currentBlockTimestamp + 1;
+    // start request in 2000 seconds 
+    const startTimeRequestFunds: number = nowInSeconds + 1000 * 2;
+    // requesting funds will have a duration of 5 minutes
+    const endTimeRequestFunds: number = nowInSeconds + 1000 * (2 + 5);
+    // crowd fund start in 1 minute later
+    const startCrowdFund: number = nowInSeconds + 1000 * (2 + 5 + 1);
+    // crowd fund lasts for 10 minutes
+    const endCrowdFund: number = nowInSeconds + 1000 * (2 + 5 + 1 + 10);
+    // 0.001 ETH = 1e15 Wei
+    const minFundValue: BigNumber = ethers.utils.parseEther("0.001");
+    // for the moment we only allow funding in ETH
+    const allowedFundingTokens: string[] = [];
+
+    // deploy Crowd Fund Factory Contract
+    const crowdFundFactoryContract: Contract = await CrowdFundFactoryContract.deploy(
+        minFundValue,
+        allowedFundingTokens,
+        startTimeRequestFunds,
+        endTimeRequestFunds,
+        startCrowdFund,
+        endCrowdFund,
+    )
+
+    await crowdFundFactoryContract.deploy();
+
+    return crowdFundFactoryContract;
+}
+
 const getCurrentBlockTimestamp = async (): Promise<number> => {
     const currentBlockData: providers.Block = await ethers.provider.getBlock("latest");
     const currentTimestamp: number = currentBlockData["timestamp"];
     return currentTimestamp;
 }
 
-export { getCrowdFundContract, getCurrentBlockTimestamp };
+export { getCrowdFundContract, getCrowdFundFactoryContract, getCurrentBlockTimestamp };
