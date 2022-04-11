@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -19,7 +19,7 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: compare both external and public methods of SC for gas efficiency purpose
 
-contract CrowdFundContract is Ownable, ReentrancyGuard {
+contract CrowdFundContract {
     
     // user structure, it encapsulates user public key, 
     // the total amount of funds he locked in our smart contract
@@ -61,7 +61,25 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
     mapping(address => address) public tokenPriceFeedMapping;           // mapping that associates to each token address its Chainlink V3Aggregator price feed
     mapping(address => bool) public creatorGotFundedMapping;            // mapping that keeps track if a creator already got funded
 
+    // variable to guard initialize code below
     bool initialized = false;
+
+    // modifier that simulates reentrancyGuard from OpenZeppelin nonReentrancyGuard
+    bool private reentrancyLock = false;
+    modifier nonReentrant() {
+        require(!reentrancyLock);
+        reentrancyLock = true;
+        _;
+        reentrancyLock = false;
+    }  
+
+    // modifier that simulates onlyOwener modifier from OpenZeppelin Ownable contract
+    address private _owner;
+    modifier onlyOwner() {
+        require(_owner == msg.sender, "Ownable: caller is not the owner");
+        _;
+    }
+    
 
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
@@ -80,8 +98,11 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         uint256 _endTimeRequestFunds,
         uint256 _startTimeCrowdFund,
         uint256 _endTimeCrowdFund
-    ) 
-    onlyOwner public {
+    ) public {
+
+        // set owner of contract
+        _owner = msg.sender;
+
         // minFundValue must be positive
         require(_minFundValue > 0, "minimum fund value should be positive");
         // min value of funds to lock, in order to use the contract
@@ -119,8 +140,7 @@ contract CrowdFundContract is Ownable, ReentrancyGuard {
         uint256 _endTimeRequestFunds,
         uint256 _startTimeCrowdFund,
         uint256 _endTimeCrowdFund
-    ) Ownable() public {
-        
+    ) onlyOwner public {
         // require that init has not been called yet, for the purporse of cloning
         require(!initialized, "cloned contract already deployed");
         // minFundValue must be positive
