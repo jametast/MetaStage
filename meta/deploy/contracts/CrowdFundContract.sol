@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -19,7 +20,11 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 // TODO: compare both external and public methods of SC for gas efficiency purpose
 
-contract CrowdFundContract {
+contract CrowdFundContract is 
+    Initializable, 
+    OwnableUpgradeable, 
+    ReentrancyGuardUpgradeable 
+{
     
     // user structure, it encapsulates user public key, 
     // the total amount of funds he locked in our smart contract
@@ -60,26 +65,6 @@ contract CrowdFundContract {
     mapping(address => bool) public elligibleCreatorsAddressMapping;    // mapping to store which creators are elligible (have art cover NFT available on platform, etc)
     mapping(address => address) public tokenPriceFeedMapping;           // mapping that associates to each token address its Chainlink V3Aggregator price feed
     mapping(address => bool) public creatorGotFundedMapping;            // mapping that keeps track if a creator already got funded
-
-    // variable to guard initialize code below
-    bool initialized = false;
-
-    // modifier that simulates reentrancyGuard from OpenZeppelin nonReentrancyGuard
-    bool private reentrancyLock = false;
-    modifier nonReentrant() {
-        require(!reentrancyLock);
-        reentrancyLock = true;
-        _;
-        reentrancyLock = false;
-    }  
-
-    // modifier that simulates onlyOwener modifier from OpenZeppelin Ownable contract
-    address private _owner;
-    modifier onlyOwner() {
-        require(_owner == msg.sender, "Ownable: caller is not the owner");
-        _;
-    }
-    
 
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
@@ -130,19 +115,25 @@ contract CrowdFundContract {
         allowedFundingTokens[address(0)] = true;
     }
 
-    // we need to add this init call method that simulates a constructor function, but
+
+    // Create a programatic crow fund smart contract
+    // creators can first request funds to realize their projects
+    // users can lock funds into our smart contract and associate these funds with creators
+    // after crowd funded has ended, funds will be distributed among creators that obtained
+    // sufficiently enough funds (meaning, users backing such creator contributed more than the total requested amount by creator)
+
+    // Why use initialize function instead of an actual constructor ? 
+    // We need to add this init call method that simulates a constructor function, but
     // in this case is used by clones of an initial CrowdFundContract, this will allow us to deploy
-    // new crowd fund rounds more cheaply
-    function init(
+    // new crowd fund rounds in a more gas efficient way
+    function initialize(
         uint256 _minFundValue, 
         address[] memory _allowedFundingTokens, 
         uint256 _startTimeRequestFunds, 
         uint256 _endTimeRequestFunds,
         uint256 _startTimeCrowdFund,
         uint256 _endTimeCrowdFund
-    ) onlyOwner public {
-        // require that init has not been called yet, for the purporse of cloning
-        require(!initialized, "cloned contract already deployed");
+    ) initializable, onlyOwner public {
         // minFundValue must be positive
         require(_minFundValue > 0, "minimum fund value should be positive");
         // min value of funds to lock, in order to use the contract
