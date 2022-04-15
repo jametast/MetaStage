@@ -76,56 +76,7 @@ contract CrowdFundContract is
     // users can lock funds into our smart contract and associate these funds with creators
     // after crowd funded has ended, funds will be distributed among creators that obtained
     // sufficiently enough funds (meaning, users backing such creator contributed more than the total requested amount by creator)
-    constructor(
-        uint256 _minFundValue, 
-        address[] memory _allowedFundingTokens, 
-        uint256 _startTimeRequestFunds, 
-        uint256 _endTimeRequestFunds,
-        uint256 _startTimeCrowdFund,
-        uint256 _endTimeCrowdFund
-    ) public {
 
-        // set owner of contract
-        _owner = msg.sender;
-
-        // minFundValue must be positive
-        require(_minFundValue > 0, "minimum fund value should be positive");
-        // min value of funds to lock, in order to use the contract
-        minFundValue = _minFundValue;
-        // start time to request funds should be after constructor is invoked
-        require(_startTimeRequestFunds >= block.timestamp, "Votation starting time already in the past");
-        // start time to request funds should be prior to end time to request funds
-        require(_startTimeRequestFunds < _endTimeRequestFunds, "Invalid request funds period");
-        // users can only lock funds into the crowd fund contract after period to request funds has finished
-        require(_endTimeRequestFunds < _startTimeCrowdFund, "Crowd fund should start after request funds period");
-        // start time for users to crowd fund projects should be prior to end time
-        require(_startTimeCrowdFund < _endTimeCrowdFund, "Invalid crowd fund period");
-
-        startTimeRequestFunds = _startTimeRequestFunds;
-        endTimeRequestFunds = _endTimeRequestFunds;
-        startTimeCrowdFund = _startTimeCrowdFund;
-        endTimeCrowdFund = _endTimeCrowdFund;
-
-        // store into a mapping available ERC20 tokens to fund projects
-        for (uint256 index; index < _allowedFundingTokens.length; index++) {
-            address token = _allowedFundingTokens[index];
-            allowedFundingTokens[token] = true;
-        }
-        // we add the 0th address, which will be useful to deal with the case where we have to transfer ETH directly
-        allowedFundingTokens[address(0)] = true;
-    }
-
-
-    // Create a programatic crow fund smart contract
-    // creators can first request funds to realize their projects
-    // users can lock funds into our smart contract and associate these funds with creators
-    // after crowd funded has ended, funds will be distributed among creators that obtained
-    // sufficiently enough funds (meaning, users backing such creator contributed more than the total requested amount by creator)
-
-    // Why use initialize function instead of an actual constructor ? 
-    // We need to add this init call method that simulates a constructor function, but
-    // in this case is used by clones of an initial CrowdFundContract, this will allow us to deploy
-    // new crowd fund rounds in a more gas efficient way
     function initialize(
         uint256 _minFundValue, 
         address[] memory _allowedFundingTokens, 
@@ -133,7 +84,12 @@ contract CrowdFundContract is
         uint256 _endTimeRequestFunds,
         uint256 _startTimeCrowdFund,
         uint256 _endTimeCrowdFund
-    ) initializable, onlyOwner public {
+    ) initializer, onlyOwner public {
+        // Why use initialize function instead of an actual constructor ? 
+        // We need to add this init call method that simulates a constructor function, but
+        // in this case is used by clones of an initial CrowdFundContract, this will allow us to deploy
+        // new crowd fund rounds in a more gas efficient way
+        
         // minFundValue must be positive
         require(_minFundValue > 0, "minimum fund value should be positive");
         // min value of funds to lock, in order to use the contract
@@ -159,9 +115,6 @@ contract CrowdFundContract is
         }
         // we add the 0th address, which will be useful to deal with the case where we have to transfer ETH directly
         allowedFundingTokens[address(0)] = true;
-
-        // update initialized variable
-        initialized = true;
     }
 
     // public view to check if start time to request funds already passed
