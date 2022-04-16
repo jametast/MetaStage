@@ -88,7 +88,7 @@ describe("CrowdFundFund", function () {
 
         // check contract data is updated
         // 1. check contract balance
-        const balanceOfContract: BigNumber = await ethers.provider.getBalance(contractAddress);
+        let balanceOfContract: BigNumber = await ethers.provider.getBalance(contractAddress);
 
         assert(balanceOfContract.eq(fundsUser1.add(fundsUser2.add(fundsUser3)))); // smart contract balance should equal the sum of fundsUser1, fundsUser2, fundsUser3
 
@@ -136,22 +136,23 @@ describe("CrowdFundFund", function () {
         assert(totalFunds3.eq(fundsUser2.add(fundsUser1.sub(minFundValue)).sub(minFundValue)));
 
         // check fanClub's are correctly specified for each user
-        const fanClub1: string[] = creatorContract1.fanClub;
-        const fanClub2: string[] = creatorContract2.fanClub;
-        const fanClub3: string[] = creatorContract3.fanClub;
+        const fanClub1: string = await crowdFundContract.creatorAddressToFanClubMapping(creatorAddress1, 0);
+        const fanClub2: string = await crowdFundContract.creatorAddressToFanClubMapping(creatorAddress3, 0);
+        const fanClub3: string = await crowdFundContract.creatorAddressToFanClubMapping(creatorAddress3, 1);
 
-        assert(fanClub1.length == 1);
-        assert(fanClub2.length == 0);
-        assert(fanClub3.length == 2);
-
-        assert(fanClub1[0] == userAddress3);
-        assert(fanClub3[0] == userAddress1);
-        assert(fanClub3[1] == userAddress3);
+        assert(fanClub1 == userAddress3);
+        assert(fanClub2 == userAddress1);
+        assert(fanClub3 == userAddress2);
 
         //  let's move past the funding period
-        increaseTimeInSeconds = 1000;
+        increaseTimeInSeconds = 10000;
         await ethers.provider.send("evm_increaseTime", [increaseTimeInSeconds]);
-        await ethers.provider.send("evm_min", []);
+        await ethers.provider.send("evm_mine", []);
+
+
+        // get current creators balances 
+        const creatorBalance1: BigNumber = await creator1.getBalance();
+        const creatorBalance3: BigNumber = await creator3.getBalance();
 
         // our contract can now be called to fund creators
         // only creator1 and creator3 got funds
@@ -161,15 +162,16 @@ describe("CrowdFundFund", function () {
         assert(balanceOfContract.sub(ethers.utils.parseEther("1.0")).eq(newBalanceOfContract));
         
         let newCreatorBalance1: BigNumber = await creator1.getBalance();
-        assert(newCreatorBalance1.eq(newCreatorBalance1.add(ethers.utils.parseEther("1.0"))));
+        assert(newCreatorBalance1.eq(creatorBalance1.add(ethers.utils.parseEther("1.0"))));
         
         // check creator 3
         await crowdFundContract.fundCreators(creatorAddress3);
+        balanceOfContract = newBalanceOfContract;
         newBalanceOfContract = await ethers.provider.getBalance(contractAddress);
         assert(balanceOfContract.sub(ethers.utils.parseEther("5.0")).eq(newBalanceOfContract));
 
         let newCreatorBalance3: BigNumber = await creator3.getBalance();
-        assert(newCreatorBalance3.eq(newCreatorBalance3.add(ethers.utils.parseEther("5.)"))));
+        assert(newCreatorBalance3.eq(creatorBalance3.add(ethers.utils.parseEther("5.0"))));
 
         // now we test if creator2 can request his funds
         const creator2RequestFunds = async () => {
