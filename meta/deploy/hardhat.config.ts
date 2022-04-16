@@ -1,4 +1,5 @@
 import { task, HardhatUserConfig } from "hardhat/config";
+import "@openzeppelin/hardhat-upgrades";
 import "@nomiclabs/hardhat-waffle";
 import * as dotenv from "dotenv";
 
@@ -14,6 +15,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   for (const account of accounts) {
     console.log(account.address);
   }
+
 });
 
 // You need to export an object to set up your config
@@ -30,7 +32,15 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 
 
 module.exports = {
-  solidity: "0.8.4",
+  solidity: {
+    version: "0.8.4",
+    settings: {
+      optimizer: {
+        enabled: false,
+        runs: 200
+      }
+    }
+  },
   defaultNetwork: "maticmum",
   networks: {
     hardhat: {

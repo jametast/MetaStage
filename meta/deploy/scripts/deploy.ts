@@ -1,10 +1,11 @@
 import "hardhat";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { BigNumber, Contract, ContractFactory, providers, Signer, utils } from "ethers";
 import { getContractFactory } from "hardhat/types";
 import { getCrowdFundContract } from "../test/deployTest";
 import * as dotenv from "dotenv";
 import { start } from "repl";
+import { encodeCall } from "@openzeppelin/upgrades";
 
 
 async function deploy(

@@ -1,5 +1,5 @@
 import { expect, assert } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { BigNumber, ContractFactory, Contract, providers } from "ethers";
 
 
@@ -28,15 +28,27 @@ const getCrowdFundContract = async (): Promise<Contract> => {
     // for the moment we only allow funding in ETH
     const allowedFundingTokens: string[] = [];
     
-    // deploy Crowd Funding contract
-    const crowdFundContract: Contract = await CrowdFundContract.deploy(
+    const callData: [BigNumber, string[], number, number, number, number] = [
         minFundValue, 
         allowedFundingTokens, 
         startRequestFunds, 
         endRequestFunds, 
         startCrowdFund, 
         endCrowdFund
-    );
+    ]
+
+    // deploy Proxy Crowd Fund contract
+    const crowdFundContract: Contract = await upgrades.deployProxy(CrowdFundContract, callData);
+
+    // // deploy Crowd Funding contract
+    // const crowdFundContract: Contract = await CrowdFundContract.deploy(
+    //     minFundValue, 
+    //     allowedFundingTokens, 
+    //     startRequestFunds, 
+    //     endRequestFunds, 
+    //     startCrowdFund, 
+    //     endCrowdFund
+    // );
     
     await crowdFundContract.deployed();
     

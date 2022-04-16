@@ -1,5 +1,5 @@
 import { expect, assert } from "chai";
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { BigNumber, ContractFactory, Contract, providers } from "ethers";
 
 
@@ -24,20 +24,21 @@ describe("CrowdFundContractTimeLine", function () {
         // crow fundings lasts for 10 minutes
         const endCrowdFund: number = nowInSeconds + 1000 * (2 + 5 + 1 + 10) 
         // 0.001 ETH = 1e15 Wei
-        const minFundValue: number = 1000000000000000; 
+        const minFundValue: BigNumber = ethers.utils.parseEther('0.01'); 
         // for the moment we only allow funding in ETH
         const allowedFundingTokens: string[] = [] 
         
-        // deploy Crowd Funding contract
-        
-        const crowdFundContract: Contract = await CrowdFundContract.deploy(
+        const callData: [BigNumber, string[], number, number, number, number] = [
             minFundValue, 
             allowedFundingTokens, 
             startRequestFunds, 
             endRequestFunds, 
             startCrowdFund, 
             endCrowdFund
-        );
+        ];
+        // deploy Crowd Funding contract
+
+        const crowdFundContract: Contract = await upgrades.deployProxy(CrowdFundContract, callData);
         
         // does request funds period started?
         let startedRequestFundsPeriodBool: boolean = await crowdFundContract.requestFundsStarted();

@@ -45,7 +45,6 @@ contract CrowdFundContract is
         address payable wallet;
         uint256 requestedFunds;
         uint256 totalFunds;
-        address payable[] fanClub;
     }
 
     uint256 public minFundValue;            // we require a certain minimum amount to be locked in our smart contract, in order to use it
@@ -54,17 +53,19 @@ contract CrowdFundContract is
     uint256 public startTimeCrowdFund;      // starting time that users can lock funds and vote for their favorite creator
     uint256 public endTimeCrowdFund;        // endind time that users can lock funds and vote for their favorite creator
 
-    User[] usersArray;    // array of all users
+    User[] internal usersArray;    // array of all users
 
-    mapping(address => bool) public usersMapping;                       // mapping to store users 
-    mapping(address => bool) public creatorsMapping;                    // mapping to store creators
-    mapping(address => bool) public allowedFundingTokens;               // which ERC20 tokens are available to fund creators
-    mapping(address => address) public userAllowedTokenMapping;         // mapping that stores which tokens each user used to lock funds
-    mapping(address => User) public addressToUserMapping;               // mapping pubkey => user structure
-    mapping(address => Creator) public addressToCreatorMapping;         // mapping pubkey => creator structure
-    mapping(address => bool) public elligibleCreatorsAddressMapping;    // mapping to store which creators are elligible (have art cover NFT available on platform, etc)
-    mapping(address => address) public tokenPriceFeedMapping;           // mapping that associates to each token address its Chainlink V3Aggregator price feed
-    mapping(address => bool) public creatorGotFundedMapping;            // mapping that keeps track if a creator already got funded
+    mapping(address => bool) public usersMapping;                           // mapping to store users 
+    mapping(address => bool) public creatorsMapping;                        // mapping to store creators
+    mapping(address => address payable[]) public creatorAddressToFanClubMapping;    // mapping from creator pubkey to array of fan's pubkeys
+    mapping(address => address) public userAddressToCreatorAddressMapping;  // mapping user pubkey => creator pubkey
+    mapping(address => bool) public allowedFundingTokens;                   // which ERC20 tokens are available to fund creators
+    mapping(address => address) public userAllowedTokenMapping;             // mapping that stores which tokens each user used to lock funds
+    mapping(address => User) public addressToUserMapping;                   // mapping pubkey => user structure
+    mapping(address => Creator) public addressToCreatorMapping;             // mapping pubkey => creator structure
+    mapping(address => bool) public elligibleCreatorsAddressMapping;        // mapping to store which creators are elligible (have art cover NFT available on platform, etc)
+    mapping(address => address) public tokenPriceFeedMapping;               // mapping that associates to each token address its Chainlink V3Aggregator price feed
+    mapping(address => bool) public creatorGotFundedMapping;                // mapping that keeps track if a creator already got funded
 
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
@@ -84,11 +85,15 @@ contract CrowdFundContract is
         uint256 _endTimeRequestFunds,
         uint256 _startTimeCrowdFund,
         uint256 _endTimeCrowdFund
-    ) initializer, onlyOwner public {
+    )  public initializer {
         // Why use initialize function instead of an actual constructor ? 
         // We need to add this init call method that simulates a constructor function, but
         // in this case is used by clones of an initial CrowdFundContract, this will allow us to deploy
         // new crowd fund rounds in a more gas efficient way
+        
+        // initialize both Ownable and Reentrancy Guard upgradeable contracts
+        OwnableUpgradeable.__Ownable_init();
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         
         // minFundValue must be positive
         require(_minFundValue > 0, "minimum fund value should be positive");
@@ -213,8 +218,9 @@ contract CrowdFundContract is
         // creator data is obtained by the creator's public key
         // we update the creator total funds variable
         creator.totalFunds += uint256(msg.value) - minFundValue;
-        // we update the array containing users that contributed with funds to creator with msg.sender
-        creator.fanClub.push(payable(msg.sender));
+        
+        // update `creator address to fan club array` mapping
+        creatorAddressToFanClubMapping[_wallet].push(payable(msg.sender));
     }
 
     // a user is allowed to lock a certain amount of available ERC20 tokens 
@@ -260,13 +266,11 @@ contract CrowdFundContract is
 
         // user data is pushed to usersArray
         usersArray.push(user);
-
         // creator data is obtained by the creator's public key
         // we update the creator total funds variable
         creator.totalFunds += fundValue - minFundValue;
-        // we update the array containing users that contributed with funds to creator with msg.sender
-        uint256 fanClubLength = creator.fanClub.length;
-        creator.fanClub[fanClubLength] = payable(msg.sender);
+        // update mapping
+        creatorAddressToFanClubMapping[_wallet].push(payable(msg.sender));
     }
 
     function isTokenAllowed(address _address) private returns(bool) {
@@ -295,10 +299,8 @@ contract CrowdFundContract is
         
         // update creatorsMapping to true on current creator wallet
         creatorsMapping[msg.sender] = true;
-        // instantiate a dynamic empty array of addresses
-        address payable[] memory fanClub = new address payable[](0);
         // encapsulate data into a Creator structure instance
-        Creator memory creator = Creator(payable(msg.sender), _amount, 0, fanClub);    // when requesting funds, we assume it is the first time creator does so, therefore its total funded value should be 0
+        Creator memory creator = Creator(payable(msg.sender), _amount, 0);    // when requesting funds, we assume it is the first time creator does so, therefore its total funded value should be 0
         // update addressToCreatorMapping
         addressToCreatorMapping[msg.sender] = creator;
     }
@@ -357,7 +359,7 @@ contract CrowdFundContract is
         // creator's structure instance
         Creator memory creator = addressToCreatorMapping[_wallet];
         // users that voted for creator's project
-        address payable[] memory fanClub = creator.fanClub;
+        address payable[] memory fanClub = creatorAddressToFanClubMapping[_wallet];
         // we loop over each user that voted for creator's project
         // check which token did the user locked his funds
         // send those funds locked at the present smart contract
@@ -381,12 +383,6 @@ contract CrowdFundContract is
                 token.transferFrom(address(this), _wallet, totalLockedAmount);
             }
         }
-    }
-
-    function retrieveFanClubFromCreator(address wallet, uint256 index) public returns(address payable) {
-        Creator memory creator = addressToCreatorMapping[wallet];
-        require(index < creator.fanClub.length, "index is too big");
-        return creator.fanClub[index];
     }
 
     // implements logic to refund users that voted for creator's projects
