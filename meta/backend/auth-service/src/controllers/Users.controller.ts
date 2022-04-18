@@ -2,8 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import UsersService from "../services/Users.service";
 import { apiErrorHandler } from "../handlers/error.handler";
 
+
+
 export default class UsersCtrl {
-    constructor() {}
+    constructor() {   
+    }
 
     // Find all users, or one user if public Address provided
     async findUser(req: Request, res: Response, next: NextFunction): Promise<any> {
@@ -26,11 +29,11 @@ export default class UsersCtrl {
          * Require payload.id == userId
          */
 
-        if ((req as any).user?.payload.id !== +req.params.userId) {
-            return res
-			.status(401)
-			.send({ error: 'You can can only access yourself' });
-        }
+        // if ((req as any).user?.id !== +req.params.userId) {
+        //     return res
+		// 	.status(401)
+		// 	.send({ error: 'You can can only access yourself' });
+        // }
 
         let { userId } = req.params;
 
@@ -44,10 +47,10 @@ export default class UsersCtrl {
 
     // Create a new user
     async createUser(req: Request, res: Response, next: NextFunction): Promise<any> {
-        let { user } = req.body;
+        let { publicAddress } = req.body;
 
         try {
-            const createdUser = await UsersService.createUser(user);
+            const createdUser = await UsersService.createUser(publicAddress);
             res.json(createdUser);
         } catch (error) {
             apiErrorHandler(error, req, res, `Reqeust failed`);
