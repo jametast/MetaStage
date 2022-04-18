@@ -55,17 +55,17 @@ contract CrowdFundContract is
 
     User[] internal usersArray;    // array of all users
 
-    mapping(address => bool) public usersMapping;                           // mapping to store users 
-    mapping(address => bool) public creatorsMapping;                        // mapping to store creators
+    mapping(address => bool) public usersMapping;                                   // mapping to store users 
+    mapping(address => bool) public creatorsMapping;                                // mapping to store creators
     mapping(address => address payable[]) public creatorAddressToFanClubMapping;    // mapping from creator pubkey to array of fan's pubkeys
-    mapping(address => address) public userAddressToCreatorAddressMapping;  // mapping user pubkey => creator pubkey
-    mapping(address => bool) public allowedFundingTokens;                   // which ERC20 tokens are available to fund creators
-    mapping(address => address) public userAllowedTokenMapping;             // mapping that stores which tokens each user used to lock funds
-    mapping(address => User) public addressToUserMapping;                   // mapping pubkey => user structure
-    mapping(address => Creator) public addressToCreatorMapping;             // mapping pubkey => creator structure
-    mapping(address => bool) public elligibleCreatorsAddressMapping;        // mapping to store which creators are elligible (have art cover NFT available on platform, etc)
-    mapping(address => address) public tokenPriceFeedMapping;               // mapping that associates to each token address its Chainlink V3Aggregator price feed
-    mapping(address => bool) public creatorGotFundedMapping;                // mapping that keeps track if a creator already got funded
+    mapping(address => address) public userAddressToCreatorAddressMapping;          // mapping user pubkey => creator pubkey
+    mapping(address => bool) public allowedFundingTokens;                           // which ERC20 tokens are available to fund creators
+    mapping(address => address) public userAllowedTokenMapping;                     // mapping that stores which tokens each user used to lock funds
+    mapping(address => User) public addressToUserMapping;                           // mapping pubkey => user structure
+    mapping(address => Creator) public addressToCreatorMapping;                     // mapping pubkey => creator structure
+    mapping(address => bool) public elligibleCreatorsAddressMapping;                // mapping to store which creators are elligible (have art cover NFT available on platform, etc)
+    mapping(address => address) public tokenPriceFeedMapping;                       // mapping that associates to each token address its Chainlink V3Aggregator price feed
+    mapping(address => bool) public creatorGotFundedMapping;                        // mapping that keeps track if a creator already got funded
 
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
