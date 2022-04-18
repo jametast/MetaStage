@@ -16,7 +16,6 @@ class Users {
 
         const { KeyConditionExpression, ExpressionAttributeValues } = this.getQueryConditions(publicAddress);
 
-        
         const queryParams: IQueryParams = {
             TableName: "user_credentials",
             KeyConditionExpression,
@@ -35,9 +34,9 @@ class Users {
     async findByUserId(userId: string): Promise<any> {
         const queryParams: IQueryParams = {
             TableName: "user_credentials",
-            KeyConditionExpression: "userId = :userId",
+            KeyConditionExpression: "publicKey = :publicKey",
             ExpressionAttributeValues: {
-                ':userId': userId
+                ':publicKey': userId
             }
         }
 
@@ -49,12 +48,13 @@ class Users {
         }
     }
 
-    async createUser(user: any): Promise<any> {
+    async createUser(publicAddress: any): Promise<any> {
         let queryParams = {
+            TableName: "user_credentials",
             Item: {
-                user
+                "publicKey": publicAddress
             },
-            TableName: "user_credentials"
+            
         };
 
         try {
@@ -68,14 +68,22 @@ class Users {
     async updateUser(userData: any): Promise<any> {
         let user = await this.findUser(userData.publicAddress);
         if (!user) {
-            throw new Error("User not exist");
+            throw new Error("User does not exist");
         }
+
+        let {name, profileImageUrl, twitter, fb, linkedIn, youTube, portfolioSite} = userData;
 
         let queryParams = {
             Item: {
-                userData
+                name: name,
+                profileImage: profileImageUrl,
+                twitterId: twitter,
+                facebookId: fb,
+                linkedInId: linkedIn,
+                youTubeId: youTube,
+                portfolioWebsite: portfolioSite
             },
-            TableName: "user_credentials",
+            TableName: "users",
             KeyConditionExpression: "userId = :userId",
             ExpressionAttributeValues: {
                 ':userId': userData.userId

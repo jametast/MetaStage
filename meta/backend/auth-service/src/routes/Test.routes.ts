@@ -9,7 +9,7 @@ class Test {
     }
 
     intializeRoutes(): void {
-        this.router.route("/save-test").post(this.testCtrl.saveTestData);
+        this.router.route("/").post(this.testCtrl.saveTestData);
     }
 
 }

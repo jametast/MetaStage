@@ -1,7 +1,7 @@
 import {Router} from "express";
 import jwt from "express-jwt";
 import UsersCtrl from "../controllers/Users.controller";
-
+import multer from "multer";
 interface config {
     algorithms: [string];
     secret: string;
@@ -10,6 +10,7 @@ interface config {
 class User {
     router: Router = Router();
     userCtrl: UsersCtrl = new UsersCtrl();
+    upload:any;
     /**
      * JWT validator
      */
@@ -18,7 +19,26 @@ class User {
         secret: 'abcdefgh123456789posteurnfmkckkskslwjs'
     }
     constructor() {
-        this.intializeRoutes();    
+
+        this.intializeRoutes(); 
+        const storage = multer.diskStorage({
+            destination: function(req, file, cb) {
+                cb(null, '../public/uploads/')
+            },
+            filename: function(req, file, cb) {
+                cb(null, file.originalname);
+            }
+        });
+
+        const fileFilter = (req: any, file: any, cb: any) => {
+            if(file.mimetype === "image/jpg"  || file.mimetype ==="image/jpeg"  || file.mimetype ===  "image/png"){
+                cb(null, true);
+            } else {
+                cb(new Error("Image uploaded is not of type jpg/jpeg or png"),false);
+            }
+        }
+
+        this.upload = multer({storage: storage, fileFilter: fileFilter});   
     }
 
     intializeRoutes(): void {
@@ -47,7 +67,7 @@ class User {
          * UPDATE/PATCH /api/user/:userId
          * Authenticated route
          */
-        this.router.route("/:userId").patch(jwt(this.jwtConfig), this.userCtrl.updateUser);
+        this.router.route("/:userId").patch(jwt(this.jwtConfig), this.upload.single('file'),this.userCtrl.updateUser);
     }
 }
 

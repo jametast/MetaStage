@@ -19,7 +19,7 @@ export default class Server {
                 "GET, POST, PUT, PATCH, DELETE"
             );
             res.setHeader(
-                "Access-Control-Allow-Headers", "X-Requested-With, Content-Type, x-access-token"
+                "Access-Control-Allow-Headers", "X-Requested-With, Content-Type, x-access-token, Authorization"
             );
             res.setHeader("Access-Control-Allow-Credentials", "true");
             next();
