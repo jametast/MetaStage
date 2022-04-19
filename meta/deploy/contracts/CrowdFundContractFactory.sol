@@ -13,7 +13,7 @@ contract CrowdFundContractFactory is Ownable {
     // using Clone Factories we reduce greatly the gas cost of deploying new CrowdFundContract's
 
     address private _crowdFundContractMasterAddress; // master address, we can eventually change, for purposes of protocol updates
-    mapping(uint256 => address) roundIdToCrowdFundContractAddressMapping; // mapping a roundId to address of a cloned CrowdFundContract
+    mapping(uint256 => address) public roundIdToCrowdFundContractAddressMapping; // mapping a roundId to address of a cloned CrowdFundContract
     uint256 private _currentRoundId; // current round Id
     event CrowdFundContractCreated(address crowdFundContractAddress); // event announcing clone CrowdFundContract creation
 
