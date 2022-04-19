@@ -66,5 +66,3 @@ contract CrowdFundContractFactory is Ownable {
         return cloneCrowdFundContractAddress;
     }
 }
-
-
