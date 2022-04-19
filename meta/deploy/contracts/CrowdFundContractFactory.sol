@@ -20,6 +20,7 @@ contract CrowdFundContractFactory is Ownable {
     constructor(address crowdFundContractMasterAddress) onlyOwner public {
         _currentRoundId = 0; // no contract deployed yet
         _crowdFundContractMasterAddress = crowdFundContractMasterAddress; // our initial master crowd fund contract, it can be updated later on
+        roundIdToCrowdFundContractAddressMapping[_currentRoundId] = _crowdFundContractMasterAddress; // we set our initial round 0 to be on the master crowd fund contract
     }
 
     function getRoundId() public returns(uint256) {
