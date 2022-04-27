@@ -19,7 +19,7 @@ export default class ProposalCtrl {
     async addNewProject(req: Request, res: Response, next: NextFunction): Promise<any> {
 
         try {
-            const result = await ProposalService.addNewProject(req.body);
+            const result = await ProposalService.addNewProject(req);
             res.json(result);
         } catch (error) {
             res.json(error);

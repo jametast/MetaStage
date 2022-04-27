@@ -1,5 +1,6 @@
 import { docClient } from "../db/dbConfig";
 import {customMessageSuccessResponse, noContent, badRequest} from "../utilities/response.utils";
+import uploadToS3 from "./UploadToS3.service";
 
 class Proposal {
     constructor() {
@@ -30,14 +31,14 @@ class Proposal {
     async addNewProject(projectDetails: any): Promise<any> {
 
         const { projectName, projectDescription, startTime, deadline } = projectDetails;
-        let nftUrl: string = "https://google.com";
+        const imageUploadS3 = await uploadToS3(projectDetails.files)
         let query = {
             Item: {
                 projectName: projectName,
                 projectDescription: projectDescription,
                 startTime: startTime,
                 deadline: deadline,
-                projectNftUrl: nftUrl,
+                projectNftUrl: imageUploadS3,
             },
             TableName: "projects",
         }
