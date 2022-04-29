@@ -9,7 +9,19 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "../../deploy/contracts/CrowdFundContract.sol";
 
-
+/**
+ * TODO: need to send funds to this contract in order to be able to mint the NFTs
+ * these funds should come from the crowd fund contract and they should correspond
+ * to part of the funds that the creator got, either by means of min fund value
+ * or a 'true' percentage of the creator's funds
+ * I see two problems with using min fund value, first if a single contributor to the 
+ * creator project, the creator assigned min fund value will be only 1 * minFundValue
+ * Second, that depletes the crowd fund contract from funds, which should probably go the
+ * treasury of the protocol. A better way is for the creator to have some of the funds sent 
+ * to the current contract. We can send the creators total funds to these contract, mint the 
+ * necessary NFTs and send the difference back to the creator. But this is certainly
+ * gas inneficient, as many transactions occur before the funds go to the creator. 
+ */ 
 contract MetaNFTMinting is 
     Initializable, 
     OwnableUpgradeable, 
@@ -29,7 +41,7 @@ contract MetaNFTMinting is
     uint256 id;                         // set the id corresponding to our NFT  
     uint256 amount;                     // amount of `fungible` NFTs we have to mint
 
-    function initialize(address _creatorAddress, address _crowdFundContractAddress, string _uri) public initializer {
+    function initialize(address _creatorAddress, address _crowdFundContractAddress, string memory _uri) public initializer {
         // get access to the current crowd fund contract
         CrowdFundContract crowdFundContract = CrowdFundContract(_crowdFundContractAddress);
 
@@ -54,7 +66,6 @@ contract MetaNFTMinting is
         uri = _uri;
 
         creatorFanClub = crowdFundContract.creatorAddressToFanClubMapping(_crowdFundContractAddress);
-        creatorGotFundedMapping = 
     }
 
     function mintNFTsToUsers() public onlyOwner {
@@ -69,8 +80,6 @@ contract MetaNFTMinting is
          * NFTs and then each user will get an amount of user_total_percentage * 100, where usel_total_percentage 
          * can be computed as floor(user_funding_amount / creator_total_funding)
         */
-        
-
         for (uint256 userIndex; userIndex < creatorFanClub.length(); userIndex++) {
             address userAddress = creatorFanClub[userIndex];
             if (isSingleTokenCrowdFund) {
@@ -103,5 +112,4 @@ contract MetaNFTMinting is
         uint256 percentageUserContribution = absoluteUserContribution / totalCreatorFunds;
         return percentageUserContribution;
     }
-
 }
