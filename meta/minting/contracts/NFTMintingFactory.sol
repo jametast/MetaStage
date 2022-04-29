@@ -8,14 +8,15 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./MetaNFTMinting.sol";
 
 
-contract NFTMintingRound is 
+contract NFTMintingRoundContract is 
     Initializable,
     OwnableUpgradeable, 
     ReentrancyGuardUpgradeable 
 {
     
-    address public crowdFundContractAddress; // address of crowd fund contract to which the NFT minting process refers to
-    address[] public creatorsAddressArray;   // array of creators addresses
+    address public crowdFundContractAddress;                                     // address of crowd fund contract to which the NFT minting process refers to
+    address[] public creatorsAddressArray;                                       // array of creators addresses
+    mapping(address => MetaNFTMinting) public creatorAddressToNFTMintingMapping; // creator address to meta nft contract mapping
 
     function initialize(address _crowdFundContractAddress) public initializer {
         // TODO: need to specify requirementes here
