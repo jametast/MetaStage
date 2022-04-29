@@ -18,6 +18,8 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 // TODO: use price feed oracles to pass from minFundValue and fundValue arguments
 // to the common denominator ETH, probably using a mapping
 
+// TODO: add LINK token and send LINK funds to the contract to use price feed
+
 // TODO: compare both external and public methods of SC for gas efficiency purpose
 
 contract CrowdFundContract is 
