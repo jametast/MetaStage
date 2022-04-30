@@ -107,9 +107,11 @@ contract MetaNFTMinting is
 
     function getAmountWithEth(address userAddress) public {
         CrowdFundContract crowdFundContract = CrowdFundContract(crowdFundContractAddress);
+
         uint256 tokenAmount = crowdFundContract.addressToUserMapping[userAddress].totalLockedAmount;
         uint256 totalCreatorFunds = crowdFundContract.addressToCreatorMapping[creatorAddress].totalFunds;
         uint256 percentageUserContribution = absoluteUserContribution / totalCreatorFunds;
+        
         return percentageUserContribution;
     }
 }

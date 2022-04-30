@@ -29,11 +29,11 @@ contract NFTMintingRoundContract is
         crowdFundContractAddress = _crowdFundContractAddress;
     }
 
-    function createNFTMintingContract() {
+    function createNFTMintingContract() onlyOwner {
         // TODO Implement this
     }
 
-    function NFTMintingRound() {
+    function NFTMintingRound() onlyOwner {
         for (uint256 index; index < creatorsAddressArray.lenght(); index++) {
             address creatorAddress = creatorsAddressArray[index];
             // TODO: how to get the true uri ? 
@@ -41,5 +41,9 @@ contract NFTMintingRoundContract is
             MetaNFTMinting mintContract = MetaNFTMinting(crowdFundContractAddress, creatorAddress, uri);
             mintContract.mintNFTsToUsers();
         }
+    }
+
+    function fundMetaNFTMintContract() onlyOwner, public {
+        crowdFundContract.fundNFTContract();
     }
 }
