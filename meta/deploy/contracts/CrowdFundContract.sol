@@ -68,6 +68,7 @@ contract CrowdFundContract is
     mapping(address => bool) public elligibleCreatorsAddressMapping;                // mapping to store which creators are elligible (have art cover NFT available on platform, etc)
     mapping(address => address) public tokenPriceFeedMapping;                       // mapping that associates to each token address its Chainlink V3Aggregator price feed
     mapping(address => bool) public creatorGotFundedMapping;                        // mapping that keeps track if a creator already got funded
+    mapping(address => address) public creatorAddressToNFTMintContractAddress;      // mapping that maps a creator address to its associated meta nft minting contract
 
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
@@ -346,6 +347,7 @@ contract CrowdFundContract is
     
     // implements logic to fund creators if these are elligible and
     // got enough funds from crowd fund 
+    // This function will most likely be deprecated, but for now we keep its use
     function fundCreators(address _wallet) payable onlyOwner public {
         // creators should obtain funds after crowd fund period has finished
         require(endTimeCrowdFund < block.timestamp, "Vote period is not yet finished");
@@ -415,6 +417,61 @@ contract CrowdFundContract is
                     // transfer funds back to user
                     token.transferFrom(address(this), wallet, user.totalLockedAmount);
                 }
+            }
+        }
+    }
+
+    // implements logic to fund each creator's associated meta nft minting contract,
+    // we require that creators are elligible and got enough funds from crowd fund
+    function fundMetaNFTMintContract(
+        address creatorAddress, 
+        address payable metaNFTMintContractAddress
+    ) 
+        payable 
+        onlyOwner 
+        public 
+    {
+        /** 
+         * This function should be similar to fundCreators, the only difference being that
+         * it needs the address of the meta NFT minting contract
+         * and send funds directly to it.
+         */
+        // creators should obtain funds after crowd fund period has finished
+        require(endTimeCrowdFund < block.timestamp, "Vote period is not yet finished");
+        // creator should exit
+        require(creatorsMapping[creatorAddress], "Unrecognized public wallet");
+        // check if creator is both elligible and obtained enough funds from the crowd fund
+        require(creatorProjectApproved(creatorAddress), "Unfortunately, creator did not obtained enough funds");
+        // make sure that this is the first time a creator requests funds
+        require(!creatorGotFundedMapping[creatorAddress], "Creator already got funds from contract");
+        // update creatorAddressToNFTMintContractAddress accordingly
+        creatorAddressToNFTMintContractAddress[creatorAddress] = metaNFTMintContractAddress;
+
+        // creator's structure instance
+        Creator memory creator = addressToCreatorMapping[creatorAddress];
+        // users that voted for creator's project
+        address payable[] memory fanClub = creatorAddressToFanClubMapping[creatorAddress];
+        // we loop over each user that voted for creator's project
+        // check which token did the user locked his funds
+        // send those funds locked at the present smart contract
+        // to the creator's public key
+        for (uint256 i = 0; i < fanClub.length; i++) {
+            // user public key address
+            address userWallet = fanClub[i];
+            User memory user = addressToUserMapping[userWallet];
+            // total locked amount of user
+            uint256 totalLockedAmount = user.totalLockedAmount;
+            // which ERC20 token did user locked his funds
+            address tokenAddress = userAllowedTokenMapping[userWallet];
+            // if user funded creator with plain ETH we use a call to the call method
+            if (tokenAddress == address(0)) {
+                metaNFTMintContractAddress.call{value: totalLockedAmount - minFundValue}("");
+            } else{
+                // user funded creator using a valid ERC20 token address, so we use the IERC20 logic to make the transfer
+                // get the ERC20 token out of token
+                IERC20 token = IERC20(tokenAddress);                
+                // transfer those ERC20 token funds from the present smart contract to creator's wallet
+                token.transferFrom(address(this), metaNFTMintContractAddress, totalLockedAmount);
             }
         }
     }
