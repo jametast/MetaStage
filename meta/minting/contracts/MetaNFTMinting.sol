@@ -10,18 +10,11 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "../../deploy/contracts/CrowdFundContract.sol";
 
 /**
- * TODO: need to send funds to this contract in order to be able to mint the NFTs
- * these funds should come from the crowd fund contract and they should correspond
- * to part of the funds that the creator got, either by means of min fund value
- * or a 'true' percentage of the creator's funds
- * I see two problems with using min fund value, first if a single contributor to the 
- * creator project, the creator assigned min fund value will be only 1 * minFundValue
- * Second, that depletes the crowd fund contract from funds, which should probably go the
- * treasury of the protocol. A better way is for the creator to have some of the funds sent 
- * to the current contract. We can send the creators total funds to these contract, mint the 
- * necessary NFTs and send the difference back to the creator. But this is certainly
- * gas inneficient, as many transactions occur before the funds go to the creator. 
- */ 
+ * TODO: we need to rethink our strategy of fractional minting or threshold minting
+ * where threshold minting uses a threshold of a creator to allow more scarce items to be minted
+ * to those users which funded a greater amount of funds
+ */
+ 
 contract MetaNFTMinting is 
     Initializable, 
     OwnableUpgradeable, 
@@ -44,7 +37,6 @@ contract MetaNFTMinting is
     function initialize(address _creatorAddress, address _crowdFundContractAddress, string memory _uri) public initializer {
         // get access to the current crowd fund contract
         CrowdFundContract crowdFundContract = CrowdFundContract(_crowdFundContractAddress);
-
         // require crowd fund timeline is complete
         require(CrowdFundContract.endTimeCrowdFund(), "MetaNFTMinting: crowd funding is not yet finished");
         // require that creator address is well specified
@@ -66,6 +58,14 @@ contract MetaNFTMinting is
         uri = _uri;
 
         creatorFanClub = crowdFundContract.creatorAddressToFanClubMapping(_crowdFundContractAddress);
+    }
+
+    function getTokenURI(uint256 tokenId) public view returns(string memory) {
+        return tokenURI(tokenId);
+    }
+
+    function setTokenURI(uint256 tokenId, string memory _tokenURI) onlyOwner public {
+        _setTokenURI(tokenId, _tokenURI);
     }
 
     function mintNFTsToUsers() public onlyOwner {

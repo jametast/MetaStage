@@ -13,15 +13,14 @@ contract NFTMintingRoundContract is
     OwnableUpgradeable, 
     ReentrancyGuardUpgradeable 
 {
-    
     address public crowdFundContractAddress;                                     // address of crowd fund contract to which the NFT minting process refers to
     address[] public creatorsAddressArray;                                       // array of creators addresses
     mapping(address => MetaNFTMinting) public creatorAddressToNFTMintingMapping; // creator address to meta nft contract mapping
 
     function initialize(address _crowdFundContractAddress) public initializer {
         // TODO: need to specify requirementes here
-
-         // initialize Ownable upgradeable contract
+        require()
+        // initialize Ownable upgradeable contract
         OwnableUpgradeable.__Ownable_init();
         // initialize Reentrancy Guard upgradeable contract
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
@@ -47,7 +46,8 @@ contract NFTMintingRoundContract is
         crowdFundContract.fundNFTContract(creatorAddress, metaNFTMintingContractAddress);
     }
 
-    function fundCreators() onlyOwner public {
-        
+    function mintNFTsToUsers(address creatorAddress) public onlyOwner {
+        MetaNFTMinting nftMintingContract = creatorAddressToNFTMintingMapping[creatorAddress];
+        nftMintingContract.mintNFTsToUsers();
     }
 }
