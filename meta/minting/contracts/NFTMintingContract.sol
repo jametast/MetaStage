@@ -12,8 +12,8 @@ contract NFTMintingContract is
     Initializable,
     OwnableUpgradeable, 
     ReentrancyGuardUpgradeable 
-{
-    address public crowdFundContractAddress;                                     // address of crowd fund contract to which the NFT minting process refers to
+{   
+    address public immutable crowdFundContractAddress;                                     // address of crowd fund contract to which the NFT minting process refers to
     address[] public creatorsAddressArray;                                       // array of creators addresses
     mapping(address => MetaNFTMinting) public creatorAddressToNFTMintingMapping; // creator address to meta nft contract mapping
     mappind(address => bool) public creatorNFTsHaveBeenMintedMapping;            // mapping to track if creator nft has been minted
@@ -64,12 +64,13 @@ contract NFTMintingContract is
         crowdFundContract.fundNFTContract(creatorAddress, metaNFTMintingContractAddress);
     }
 
+    // TODO: need to refactor this function to not depend on input creatorAddress
     function mintNFTsToUsers(address creatorAddress) external onlyOwner {
         MetaNFTMinting nftMintingContract = creatorAddressToNFTMintingMapping[creatorAddress];
         nftMintingContract.mintNFTsToUsers();
     }
 
-    function setElligibleCreators(address[] memory elligibleCreatorsAddressArray) external onlyOwner {
+    function setElligibleCreators(address[] calldata elligibleCreatorsAddressArray) external onlyOwner {
         creatorsAddressArray = elligibleCreatorsAddressArray;
     }   
 }

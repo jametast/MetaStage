@@ -13,9 +13,11 @@ contract MetaCreatorsContract is Ownable {
     // we will need to deploy a `master` CrowdFund contract, for which every clone gets its logic from
     // using Clone Factories we reduce greatly the gas cost of deploying new CrowdFundContract's
 
-    // state variables 
-    address private _crowdFundContractMasterAddress;                              // master address, we can eventually change, for purposes of protocol updates
-    address private _nftMintingContractMasterAddress;                             // master address of nft minting contract, we can eventually change, for purposes of protocol updates
+    // immutable state variables 
+    address private immutable _crowdFundContractMasterAddress;                    // master address, we can eventually change, for purposes of protocol updates
+    address private immutable _nftMintingContractMasterAddress;                   // master address of nft minting contract, we can eventually change, for purposes of protocol updates
+    
+    // state variables
     mapping(uint256 => address) public roundIdToCrowdFundContractAddressMapping;  // mapping a roundId to address of a cloned CrowdFundContract
     mapping(uint256 => address) public roundIdToNFTMintingContractAddressMapping; // mapping a roundId to address of a cloned NFTMintingContract
     uint256 private _currentRoundId;                                              // current round Id

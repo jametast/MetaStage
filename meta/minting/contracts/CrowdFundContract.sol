@@ -49,14 +49,15 @@ contract CrowdFundContract is
         uint256 totalFunds;
     }
 
-    uint256 public minFundValue;            // we require a certain minimum amount to be locked in our smart contract, in order to use it
-    uint256 public startTimeRequestFunds;   // starting time that creators have to request funds
-    uint256 public endTimeRequestFunds;     // ending time that creators have to request funds
-    uint256 public startTimeCrowdFund;      // starting time that users can lock funds and vote for their favorite creator
-    uint256 public endTimeCrowdFund;        // endind time that users can lock funds and vote for their favorite creator
+    // immutable state variables
+    uint256 public immutable minFundValue;            // we require a certain minimum amount to be locked in our smart contract, in order to use it
+    uint256 public immutable startTimeRequestFunds;   // starting time that creators have to request funds
+    uint256 public immutable  endTimeRequestFunds;     // ending time that creators have to request funds
+    uint256 public immutable startTimeCrowdFund;      // starting time that users can lock funds and vote for their favorite creator
+    uint256 public immutable endTimeCrowdFund;        // endind time that users can lock funds and vote for their favorite creator
 
+    // state variables
     User[] internal usersArray;    // array of all users
-
     mapping(address => bool) public usersMapping;                                   // mapping to store users 
     mapping(address => bool) public creatorsMapping;                                // mapping to store creators
     mapping(address => address payable[]) public creatorAddressToFanClubMapping;    // mapping from creator pubkey to array of fan's pubkeys
@@ -70,10 +71,15 @@ contract CrowdFundContract is
     mapping(address => bool) public creatorGotFundedMapping;                        // mapping that keeps track if a creator already got funded
     mapping(address => address) public creatorAddressToNFTMintContractAddress;      // mapping that maps a creator address to its associated meta nft minting contract
 
+    // events
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
 
+    // user defined errors
     error CreatorAlreadyRequestedFunds();           // error => creators are not allowed to request funds multiple times
     error CreatorIsNotElligible();                    // error => creator is not elligible (does not have art cover NFT available on platform, etc)
+
+    // receive function
+    receive() external payable {}
 
     // Create a programatic crow fund smart contract
     // creators can first request funds to realize their projects
@@ -222,6 +228,7 @@ contract CrowdFundContract is
         // we update the creator total funds variable
         creator.totalFunds += uint256(msg.value) - minFundValue;
         
+        
         // update `creator address to fan club array` mapping
         creatorAddressToFanClubMapping[_wallet].push(payable(msg.sender));
     }
@@ -263,7 +270,6 @@ contract CrowdFundContract is
         // Lock funds from user into the current smart contract
         // These funds will be then distributed to the chosen creator, given that creator obtained enough funds
         IERC20 token = IERC20(_tokenFundAddress);
-        payable(msg.sender).call{value: _amount}("");
         // payable(msg.sender).transfer(address(this), _amount);
         token.transferFrom(msg.sender, address(this), _amount);
 
@@ -378,7 +384,8 @@ contract CrowdFundContract is
             address tokenAddress = userAllowedTokenMapping[userWallet];
             // if user funded creator with plain ETH we use a call to the call method
             if (tokenAddress == address(0)) {
-                _wallet.call{value: totalLockedAmount - minFundValue}("");
+                (bool sent, ) = _wallet.call{value: totalLockedAmount - minFundValue}("");
+                require(sent, "failed transaction"); // TODO: if we stop the for loop here, we will need to run it again, which is not optimal from a gas viewpoint
             } else{
                 // user funded creator using a valid ERC20 token address, so we use the IERC20 logic to make the transfer
                 // get the ERC20 token out of token
@@ -409,7 +416,8 @@ contract CrowdFundContract is
             if (!creatorProjectApproved(user.creatorWallet)) {
                 // is user funded creator with plain ETH we use the call method to make the transfer
                 if (tokenAddress == address(0)) {
-                    wallet.call{value: user.totalLockedAmount - minFundValue}("");
+                    (bool sent, ) = wallet.call{value: user.totalLockedAmount - minFundValue}("");
+                    require(sent, "transaction failed"); // TODO: is this gas efficient ?
                 } else {
                     // user instead opted for funding with some valid ERC20 token
                     // get the IERC20 token out of tokenAddress
