@@ -25,6 +25,7 @@ contract MetaCreatorsContract is Ownable {
     event crowdFundContractCreated(address crowdFundContractAddress);             // event announcing clone CrowdFundContract creation
     event nftMintingContractCreated(address nftMintingContractAddress);           // event announcing clone NFT minting contract creation
     event roundHasFinished(uint256 roundId);                                      // event announcing the end of a round of the protocol
+    event nftMintEvent(address creatorAddress);                                   // event announcing the minting of users NFTs for given creator
 
     // errors
     error invalidRoundId();                                                       // user defined error to handle case where the roundId variable is invalid (that is roundId > currentRoundId)                       
@@ -99,8 +100,12 @@ contract MetaCreatorsContract is Ownable {
         require(_startTimeCrowdFund < _endTimeCrowdFund, "Invalid crowd fund period");
         // get the previous crowd fund contract
         previousCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // get the previous nft minting contract
+        previousNFTMintingContractAddress = roundIdToNFTMintingContractAddressMapping[_currentRoundId];
         // finally we require that currentRoundId associated crowd fund contract is also finished
         require(CrowdFundContract(previousCrowdFundContractAddress).endTimeCrowdFund, "Previous crowd fund contract has not yet finished");
+        // we also require that all users have been refund and creators nfts being minted
+        require(NFTMintingContract(previousNFTMintingContractAddress).nftHasBeenMinted(), "Previous round has not yet finished minting all NFTs");
 
         // update round id 
         _currentRoundId += 1; 
@@ -130,6 +135,34 @@ contract MetaCreatorsContract is Ownable {
         emit nftMintingContractCreated(nftMintingContractAddress);
         //update our roundId to NFTMintingContractAddress mapping
         roundIdToNFTMintingContractAddressMapping[_currentRoundId] = cloneNFTMintingContractAddress;
+    }
+
+    /**
+     * we now implement logic to deal with the end of a crowd fund and the start of a minting process
+     */
+
+    function mintNFTRound() public onlyOwner {
+        // get the current crowd fund contract
+        CrowdFundContract crowdFundContract = CrowdFundContract(roundIdToCrowdFundContractAddressMapping[_currentRoundId]);
+        // get the current nft minting contract
+        NFTMintingContract nftMintingContract = NFTMintingContarct(roundIdToNFTMintingContractAddressMapping[_currentRoundId]);
+        // we require that the crowd fund round is over
+        require(crowdFundContract.crowdFundEnded(), "current crowd fund is not yet over");
+        // we require that the associated nft minting process is not over
+        require(!nftMintingContract.nftHasBeenMinted(), "creators NFT's already been minted");
+
+        // get the elligible creators array from our current crowd fund contract
+        address[] memory elligibleCreatosArray = crowdFundContract.elligibleCreatorsArray;
+
+        // we loop over every possible elligible creator address to mint necessary NFTs
+        for (uint256 index; index < elligibleCreatosArray.length; index++) {
+            // get current creator address
+            address creatorAddress = elligibleCreatosArray[index];
+            // mint NFTs for each user that funded creator project
+            nftMintingContract.mintNFTsToUsers(creatorAddress);
+            // we emit event of new minted nft 
+            emit nftMintEvent(creatorAddress);
+        }
     }
 
     /**

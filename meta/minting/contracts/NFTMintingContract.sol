@@ -16,6 +16,8 @@ contract NFTMintingContract is
     address public crowdFundContractAddress;                                     // address of crowd fund contract to which the NFT minting process refers to
     address[] public creatorsAddressArray;                                       // array of creators addresses
     mapping(address => MetaNFTMinting) public creatorAddressToNFTMintingMapping; // creator address to meta nft contract mapping
+    mappind(address => bool) public creatorNFTsHaveBeenMintedMapping;            // mapping to track if creator nft has been minted
+    bool private _nftHasBeenMinted;                                              // bool value to track if creator nft's have already being minted
 
     function initialize(address _crowdFundContractAddress) public initializer {
         // TODO: need to specify requirementes here
@@ -26,20 +28,36 @@ contract NFTMintingContract is
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
 
         crowdFundContractAddress = _crowdFundContractAddress;
+
+        // nftIsMinted should be set to false
+        _nftHasBeenMinted = false;
     }
 
     function createNFTMintingContract() onlyOwner public {
         // TODO Implement this
     }
 
+    function nftHasBeenMinted() external view {
+        return _nftHasBeenMinted;
+    }
+
     function NFTMintingRound() onlyOwner public {
         for (uint256 index; index < creatorsAddressArray.lenght(); index++) {
             address creatorAddress = creatorsAddressArray[index];
-            // TODO: how to get the true uri ? 
+            // TODO: how to get the true uri ? We probably need to coordinate with the backend infrastructure
             string uri = ""; 
+            if (creatorAddressToNFTMintingMapping[creator]) {
+                // if current creator's nft has already been minted, then we don't need to mint it again
+                // this is probably inefficient from a gas point of view
+                // indeed we are looping over unnecessary indexes, where we could probably remove them from the array
+                continue;
+            }
             MetaNFTMinting mintContract = MetaNFTMinting(crowdFundContractAddress, creatorAddress, uri);
             mintContract.mintNFTsToUsers();
+            creatorAddressToNFTMintingMapping[creatorAddress] = true;
         }
+
+        _nftHasBeenMinted = true; // TODO: Is this really a safe method ? What happens if the for loop above fails ? 
     }
 
     function fundMetaNFTMintContract(address creatorAddres, address metaNFTMintingContractAddress) onlyOwner public {
