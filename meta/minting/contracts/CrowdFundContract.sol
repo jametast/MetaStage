@@ -329,7 +329,7 @@ contract CrowdFundContract is
     }
 
     // returns total funds creator obtained until the current block timestamp
-    function computeTotalFunds(address _wallet) public returns(uint256) {
+    function computeTotalFunds(address _wallet) public onlyOwner returns(uint256) {
         require(creatorsMapping[_wallet], "Unrecognized creator's public key");
         Creator memory creator;
         creator = addressToCreatorMapping[_wallet];
@@ -337,7 +337,7 @@ contract CrowdFundContract is
     }
 
     // returns requested funds from creator
-    function computeRequestedFunds(address _wallet) public returns(uint256) {
+    function computeRequestedFunds(address _wallet) public onlyOwner returns(uint256) {
         require(creatorsMapping[_wallet], "Unrecognized creator's public key");
         Creator memory creator = addressToCreatorMapping[_wallet];
         return creator.requestedFunds;

@@ -286,7 +286,7 @@ contract MetaCreatorsContract is Ownable {
     }
 
     // returns requested funds from creator
-    function computeRequestedFunds(address _wallet) public returns(uint256) {
+    function computeRequestedFunds(address _wallet) public onlyOwner returns(uint256) {
         // get current crowd fund contract address
         address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
         // call to compute request funds
