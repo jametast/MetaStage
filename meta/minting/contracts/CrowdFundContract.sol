@@ -47,18 +47,19 @@ contract CrowdFundContract is
         address payable wallet;
         uint256 requestedFunds;
         uint256 totalFunds;
+        string uri;
     }
 
     // immutable state variables
     uint256 public immutable minFundValue;            // we require a certain minimum amount to be locked in our smart contract, in order to use it
     uint256 public immutable startTimeRequestFunds;   // starting time that creators have to request funds
-    uint256 public immutable  endTimeRequestFunds;     // ending time that creators have to request funds
+    uint256 public immutable  endTimeRequestFunds;    // ending time that creators have to request funds
     uint256 public immutable startTimeCrowdFund;      // starting time that users can lock funds and vote for their favorite creator
     uint256 public immutable endTimeCrowdFund;        // endind time that users can lock funds and vote for their favorite creator
 
     // state variables
-    User[] internal usersArray;    // array of all users
-    mapping(address => bool) public usersMapping;                                   // mapping to store users 
+    User[] internal usersArray;                                                     // array of all users
+    address[] public creatorsAddressArray;                                        // array of all creator's addresses
     mapping(address => bool) public creatorsMapping;                                // mapping to store creators
     mapping(address => address payable[]) public creatorAddressToFanClubMapping;    // mapping from creator pubkey to array of fan's pubkeys
     mapping(address => address) public userAddressToCreatorAddressMapping;          // mapping user pubkey => creator pubkey
@@ -132,22 +133,22 @@ contract CrowdFundContract is
     }
 
     // public view to check if start time to request funds already passed
-    function requestFundsStarted() public view returns(bool) {
+    function requestFundsStarted() external view returns(bool) {
         return startTimeRequestFunds <= block.timestamp;
     }
 
     // public view to check if end time to request funds already passed
-    function requestFundsEnded() public view returns(bool) {
+    function requestFundsEnded() external view returns(bool) {
         return endTimeRequestFunds <= block.timestamp;
     }  
 
     // public view to check if start time to request funds already passed
-    function crowdFundStarted() public view returns(bool) {
+    function crowdFundStarted() external view returns(bool) {
         return startTimeCrowdFund <= block.timestamp;
     }
 
     // public view to check if end time to request funds already passed
-    function crowdFundEnded() public view returns(bool) {
+    function crowdFundEnded() external view returns(bool) {
         return endTimeCrowdFund <= block.timestamp;
     }
 
@@ -164,23 +165,23 @@ contract CrowdFundContract is
     }
 
     // public view that checks how much time is left until request funds period is finished
-    function getTimeLeftRequestFunds() public requestFundsTimerOver view returns(uint256) {
+    function getTimeLeftRequestFunds() external requestFundsTimerOver view returns(uint256) {
         console.log(block.timestamp);
         return endTimeRequestFunds - block.timestamp;
     }
 
     // public view that checks how much time is left until crowd funding period is finished
-    function getTimeLeftCrowdFund() public crowdFundTimerOver view returns(uint256) {
+    function getTimeLeftCrowdFund() external crowdFundTimerOver view returns(uint256) {
         return endTimeCrowdFund - block.timestamp;
     }
 
     // sets price feed Chainlink V3 Aggregator smart contract
-    function setPriceFeedContract(address _token, address _priceFeed) public onlyOwner {
+    function setPriceFeedContract(address _token, address _priceFeed) external onlyOwner {
         tokenPriceFeedMapping[_token] = _priceFeed;
     }
 
     // public view that returns price of a given ERC20 token
-    function getTokenPrice(address _token) public view returns(uint256) {
+    function getTokenPrice(address _token) public returns(uint256) {
         address priceFeedAddress = tokenPriceFeedMapping[_token];
         AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddress);
         (, int256 price,,,) = priceFeed.latestRoundData();
@@ -191,7 +192,7 @@ contract CrowdFundContract is
     // and associate such funds to a given creator. This amount is locked into
     // the current contract until crowd fund is over. 
     // We need OpenZeppelin nonReentrant safety guard against possible reentrant attacks 
-    function fund(address _wallet) nonReentrant public payable {
+    function fund(address _wallet) nonReentrant external payable {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
 
@@ -203,15 +204,13 @@ contract CrowdFundContract is
         // Require that public key of creator is valid
         require(creatorsMapping[_wallet], "Creator's public address is unrecognized");
         // Require that creator is elligible, (that is, minted art cover NFT at the platform, etc)
-        require(isCreatorElligible(_wallet), "Creator's public address is not elligible");
+        require(elligibleCreatorsAddressMapping[_wallet], "Creator's public address is not elligible");
         // Require that ERC token is allowed
 
         // define the creator value
-        Creator storage creator = addressToCreatorMapping[_wallet];
+        Creator memory creator = addressToCreatorMapping[_wallet];
         // Encapsulate data into a User structure
         User memory user = User(payable(msg.sender), uint256(msg.value), address(0), _wallet); // since we are transferring ETH in this fund overload method, we use the null address `address(0)`
-        // users mapping is updated with the public key interacting with the contract
-        usersMapping[msg.sender] = true;
         // address to user mapping is updated
         addressToUserMapping[msg.sender] = user;
 
@@ -220,7 +219,7 @@ contract CrowdFundContract is
         // however the amount funded to given creator corresponds to msg.value - minFundValue
         // These funds will be then distributed to the chosen creator, given that creator obtained enough funds
         // we require that the transaction was correctly processed
-        
+    
         // user data is pushed to usersArray
         usersArray.push(user);
 
@@ -228,17 +227,26 @@ contract CrowdFundContract is
         // we update the creator total funds variable
         creator.totalFunds += uint256(msg.value) - minFundValue;
         
-        
         // update `creator address to fan club array` mapping
         creatorAddressToFanClubMapping[_wallet].push(payable(msg.sender));
+
+        // we can now check if creator is elligible, and if so make it elligible inside our smart contract
+        // notice that a creator is elligible, if for some user round fund the creator total amount funded is bigger than the request
+        // total funds
+        if (creatorProjectApproved(_wallet)) {
+            makeCreatorElligible(_wallet);
+        }  
     }
 
-    // a user is allowed to lock a certain amount of available ERC20 tokens 
-    // and associate such funds to a given creator. This amount is locked into
-    // the current contract until crowd fund is over. 
-    //
+    /**
+     * a user is allowed to lock a certain amount of available ERC20 tokens 
+     * and associate such funds to a given creator. This amount is locked into
+     * the current contract until crowd fund is over. 
+     */
+
+
     // function overload to account for possible different fund tokens on the protocol
-    function fund(uint256 _amount, address _tokenFundAddress, address _wallet) public payable {
+    function fund(uint256 _amount, address _tokenFundAddress, address _wallet) nonReentrant external payable {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund <= block.timestamp && block.timestamp <= endTimeCrowdFund, "Not in crowd fund phase");
         // given ERC20 address, in which user wants to lock his funds (say ETH, USDT, LINK, ...), is allowed by the protocol
@@ -255,7 +263,7 @@ contract CrowdFundContract is
         // Require that public key of creator is valid
         require(creatorsMapping[_wallet], "Creator's public address is unrecognized");
         // Require that creator is elligible, (that is, minted art cover NFT at the platform, etc)
-        require(isCreatorElligible(_wallet), "Creator's public address is not elligible");
+        require(elligibleCreatorsAddressMapping[_wallet], "Creator's public address is not elligible");
         // Require that ERC token is allowed
         require(allowedFundingTokens[_tokenFundAddress], "Current token is not allowed to fund creators");
 
@@ -263,8 +271,6 @@ contract CrowdFundContract is
         Creator storage creator = addressToCreatorMapping[_wallet];
         // Encapsulate data into a User structure
         User memory user = User(payable(msg.sender), _amount, _tokenFundAddress, _wallet);
-        // users mapping is updated with the public key interacting with the contract
-        usersMapping[msg.sender] = true;
         // address to user mapping is updated
         addressToUserMapping[msg.sender] = user;
         // Lock funds from user into the current smart contract
@@ -287,29 +293,26 @@ contract CrowdFundContract is
         return allowedFundingTokens[_address];
     }
 
-    function userHasLockedFunds(address _wallet) public returns(bool) {
-        // checks if public address has locked funds in current smart contract
-        return usersMapping[_wallet];
-    }
-
-    // implements logic to allow creators requiring funds from community
-    // funds should be requested between startTimeRequestFunds and endTimeRequestFunds
-    // moreover, our platform should offer logic to interact with current smart contract
-    // that specifies if current public key is elligible to request funds. This is done
-    // by requiring creators to (partially) mint NFTs art cover to the platform, as well
-    // as detailed description of the project working on
-    function requestFunds(uint256 _amount) public {
+    /** 
+     * implements logic to allow creators requiring funds from community
+     * funds should be requested between startTimeRequestFunds and endTimeRequestFunds
+     * moreover, our platform should offer logic to interact with current smart contract
+     * that specifies if current public key is elligible to request funds. This is done
+     * by requiring creators to (partially) mint NFTs art cover to the platform, as well
+     * as detailed description of the project working on
+     */
+    function requestFunds(uint256 _amount, string calldata _uri) public {
         // require that funds are requested between startTimeRequestFunds and endTimeRequestFunds period
         require(startTimeRequestFunds <= block.timestamp && block.timestamp <= endTimeRequestFunds, "Out of request funds phase");
         // require minimum fund value
         require(_amount > minFundValue, "Requested amount must be bigger than minimum fundable value");
         // check if creator is elligible, that is it already minted NFT art cover on platform, etc
-        require(isCreatorElligible(msg.sender), "Creator is not elligible to request funds");
+        require(elligibleCreatorsAddressMapping[msg.sender], "Creator is not elligible to request funds");
         
         // update creatorsMapping to true on current creator wallet
         creatorsMapping[msg.sender] = true;
         // encapsulate data into a Creator structure instance
-        Creator memory creator = Creator(payable(msg.sender), _amount, 0);    // when requesting funds, we assume it is the first time creator does so, therefore its total funded value should be 0
+        Creator memory creator = Creator(payable(msg.sender), _amount, 0, _uri); // when requesting funds, we assume it is the first time creator does so, therefore its total funded value should be 0
         // update addressToCreatorMapping
         addressToCreatorMapping[msg.sender] = creator;
     }
@@ -319,12 +322,10 @@ contract CrowdFundContract is
     // the current smart contract to make it elligible at the blockchain level as well
     function makeCreatorElligible(address _wallet) public onlyOwner {
         // update elligibleCreatorsAddressMapping to allow for current creator to be elligible
-        elligibleCreatorsAddressMapping[_wallet] = true;
-    }
-
-    // checks if a given public key corresponds to an elligible creator
-    function isCreatorElligible(address _wallet) public returns(bool) {
-        return elligibleCreatorsAddressMapping[_wallet];
+        if (!elligibleCreatorsAddressMapping[_wallet]) {
+            creatorsAddressArray.push(_wallet);
+            elligibleCreatorsAddressMapping[_wallet] = true;
+        }
     }
 
     // returns total funds creator obtained until the current block timestamp
@@ -344,17 +345,16 @@ contract CrowdFundContract is
 
     // returns true if creators obtained more crowd funds than his requested amount
     function creatorProjectApproved(address _wallet) public returns(bool) {
-        // require that public address corresponds to an elligible creator
-        require(elligibleCreatorsAddressMapping[_wallet], "Creator is not elligible");
         uint256 totalFunds = computeTotalFunds(_wallet);
-        uint256 requestedFunds = computeRequestedFunds(_wallet);
+        Creator memory creator = addressToCreatorMapping[_wallet];
+        uint256 requestedFunds = creator.requestedFunds;
         return requestedFunds <= totalFunds;
     }
     
     // implements logic to fund creators if these are elligible and
     // got enough funds from crowd fund 
     // This function will most likely be deprecated, but for now we keep its use
-    function fundCreators(address _wallet) payable onlyOwner public {
+    function fundCreators(address _wallet) payable onlyOwner external {
         // creators should obtain funds after crowd fund period has finished
         require(endTimeCrowdFund < block.timestamp, "Vote period is not yet finished");
         // creator should exit
@@ -399,7 +399,7 @@ contract CrowdFundContract is
     // implements logic to refund users that voted for creator's projects
     // that did not get enough funds and therefore are not 
     // elligible to get funds
-    function refundUsers() payable onlyOwner public {
+    function refundUsers() payable onlyOwner external {
         // encapsulate the number of users of the smart contract 
         // into a variable totalNumberOfUsers
         uint256 totalNumberOfUsers = usersArray.length;
@@ -431,13 +431,13 @@ contract CrowdFundContract is
 
     // implements logic to fund each creator's associated meta nft minting contract,
     // we require that creators are elligible and got enough funds from crowd fund
-    function fundMetaNFTMintContract(
+    function fundNFTMintContract(
         address creatorAddress, 
-        address payable metaNFTMintContractAddress
+        address payable _NFTMintContractAddress
     ) 
         payable 
         onlyOwner 
-        public 
+        external
     {
         /** 
          * This function should be similar to fundCreators, the only difference being that
@@ -459,28 +459,33 @@ contract CrowdFundContract is
         Creator memory creator = addressToCreatorMapping[creatorAddress];
         // users that voted for creator's project
         address payable[] memory fanClub = creatorAddressToFanClubMapping[creatorAddress];
-        // we loop over each user that voted for creator's project
-        // check which token did the user locked his funds
-        // send those funds locked at the present smart contract
-        // to the creator's public key
-        for (uint256 i = 0; i < fanClub.length; i++) {
-            // user public key address
-            address userWallet = fanClub[i];
-            User memory user = addressToUserMapping[userWallet];
-            // total locked amount of user
-            uint256 totalLockedAmount = user.totalLockedAmount;
-            // which ERC20 token did user locked his funds
-            address tokenAddress = userAllowedTokenMapping[userWallet];
-            // if user funded creator with plain ETH we use a call to the call method
-            if (tokenAddress == address(0)) {
-                metaNFTMintContractAddress.call{value: totalLockedAmount - minFundValue}("");
-            } else{
-                // user funded creator using a valid ERC20 token address, so we use the IERC20 logic to make the transfer
-                // get the ERC20 token out of token
-                IERC20 token = IERC20(tokenAddress);                
-                // transfer those ERC20 token funds from the present smart contract to creator's wallet
-                token.transferFrom(address(this), metaNFTMintContractAddress, totalLockedAmount);
-            }
-        }
+        
+        // without different allowed tokens, we don't neet a for loop
+        // transfer tokens to nft minting contract
+        _NFTMintContractAddress.call{ value: totalLockedAmount - minFundValue * fanClub.length };
+
+        // // we loop over each user that voted for creator's project
+        // // check which token did the user locked his funds
+        // // send those funds locked at the present smart contract
+        // // to the creator's public key
+        // for (uint256 i = 0; i < fanClub.length; i++) {
+        //     // user public key address
+        //     address userWallet = fanClub[i];
+        //     User memory user = addressToUserMapping[userWallet];
+        //     // total locked amount of user
+        //     uint256 totalLockedAmount = user.totalLockedAmount;
+        //     // which ERC20 token did user locked his funds
+        //     address tokenAddress = userAllowedTokenMapping[userWallet];
+        //     // if user funded creator with plain ETH we use a call to the call method
+        //     if (tokenAddress == address(0)) {
+        //         metaNFTMintContractAddress.call{value: totalLockedAmount - minFundValue}("");
+        //     } else{
+        //         // user funded creator using a valid ERC20 token address, so we use the IERC20 logic to make the transfer
+        //         // get the ERC20 token out of token
+        //         IERC20 token = IERC20(tokenAddress);                
+        //         // transfer those ERC20 token funds from the present smart contract to creator's wallet
+        //         token.transferFrom(address(this), metaNFTMintContractAddress, totalLockedAmount);
+        //     }
+        // }
     }
 }

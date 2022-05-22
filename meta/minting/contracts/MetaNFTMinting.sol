@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol"; // we use ERC1155 in order to mint `semi` fungible NFTs for each creator 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "../../deploy/contracts/CrowdFundContract.sol";
+import "./CrowdFundContract.sol";
 
 /**
  * TODO: we need to rethink our strategy of fractional minting or threshold minting

@@ -13,11 +13,12 @@ contract NFTMintingContract is
     OwnableUpgradeable, 
     ReentrancyGuardUpgradeable 
 {   
-    address public immutable crowdFundContractAddress;                                     // address of crowd fund contract to which the NFT minting process refers to
+    address public immutable crowdFundContractAddress;                           // address of crowd fund contract to which the NFT minting process refers to
     address[] public creatorsAddressArray;                                       // array of creators addresses
     mapping(address => MetaNFTMinting) public creatorAddressToNFTMintingMapping; // creator address to meta nft contract mapping
-    mappind(address => bool) public creatorNFTsHaveBeenMintedMapping;            // mapping to track if creator nft has been minted
-    bool private _nftHasBeenMinted;                                              // bool value to track if creator nft's have already being minted
+    mapping(address => bool) public creatorNFTsHaveBeenMintedMapping;            // mapping to track if creator nft has been minted
+    bool public nftHasBeenMinted;                                              // bool value to track if creator nft's have already being minted
+    mapping(address => uint256) creatorAddressToTotalFunds;                      // mapping to track each creator funds
 
     function initialize(address _crowdFundContractAddress) public initializer {
         // TODO: need to specify requirementes here

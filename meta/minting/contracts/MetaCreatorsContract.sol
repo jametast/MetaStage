@@ -20,6 +20,8 @@ contract MetaCreatorsContract is Ownable {
     // state variables
     mapping(uint256 => address) public roundIdToCrowdFundContractAddressMapping;  // mapping a roundId to address of a cloned CrowdFundContract
     mapping(uint256 => address) public roundIdToNFTMintingContractAddressMapping; // mapping a roundId to address of a cloned NFTMintingContract
+    mapping(address => string) public creatorAddressToURIMapping;                 // mapping a creator address to its associated, and uniquely defined, URI
+    mapping(uint256 => bool) public roundIdToNFTHasBeenMinted;                    // mapping to keep track if nft contract has been funded 
     uint256 private _currentRoundId;                                              // current round Id
     
     // events
@@ -32,7 +34,13 @@ contract MetaCreatorsContract is Ownable {
     // errors
     error invalidRoundId();                                                       // user defined error to handle case where the roundId variable is invalid (that is roundId > currentRoundId)                       
 
-    constructor(address _crowdFundContractAddress, address _nftMintingContractAddress) onlyOwner public {
+    constructor(
+        address _crowdFundContractAddress, 
+        address _nftMintingContractAddress
+    ) 
+        onlyOwner 
+        public
+    {
         // no contract deployed yet, therefore we initialize the current round id to 0
         _currentRoundId = 0;
         // our initial master crowd fund contract, it can be updated later on
@@ -114,7 +122,7 @@ contract MetaCreatorsContract is Ownable {
         // deploy a Proxy Contract for current Crowd fund and get its address
         address cloneCrowdFundContractAddress = Clones.clone(_crowdFundContractMasterAddress); 
         // we now initialize a new round crowd fund contract address 
-        CrowdFundContract(cloneCrowdFundContractAddress).initialize(
+        CrowdFundContract _currentCrowdFundContract = CrowdFundContract(cloneCrowdFundContractAddress).initialize(
             _minFundValue, 
             _allowedFundingTokens,
             _startTimeRequestFunds, 
@@ -127,11 +135,11 @@ contract MetaCreatorsContract is Ownable {
         emit CrowdFundContractCreated(cloneCrowdFundContractAddress); 
         // update our roundId to CrowdFuncContractAddress mapping
         roundIdToCrowdFundContractAddressMapping[_currentRoundId] = cloneCrowdFundContractAddress; 
-
+       
         // deploy a Proxy Contract for current NFT minting process and get its address
         address cloneNFTMintingContractAddress = Clones.clone(_nftMintingContractMasterAddress);
         // we now initialize the associated nft minting contract
-        NFTMintingContract(cloneNFTMintingContractAddress).initialize(cloneCrowdFundContractAddress);
+        NFTMintingContract _currentNFTMintingContract = NFTMintingContract(cloneNFTMintingContractAddress).initialize(cloneCrowdFundContractAddress);
 
         // emit event of creation of a new NFT minting contract
         emit nftMintingContractCreated(nftMintingContractAddress);
@@ -168,72 +176,183 @@ contract MetaCreatorsContract is Ownable {
     }
 
     /**
-    * Given a roundId, the current contract will deploy a new crowd fund contract attached to this
-    * roundId, therefore, the current contract will be the onlyOwner of such crowd fund contract
-    * for this reason, we have to reimplement every method that it is owned by the current smart contract,
-    * in order to be able to interact from the external (and actual) owner of the contract
-    */
+     * Given a roundId, the current contract will deploy a new crowd fund contract attached to this
+     * roundId, therefore, the current contract will be the onlyOwner of such crowd fund contract
+     * for this reason, we have to reimplement every method that it is owned by the current smart contract,
+     * in order to be able to interact from the external (and actual) owner of the contract
+     */
+
+    // helper function that checks when request funds phase started
+    function requestFundsStarted() external view returns(bool) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to request funds Started
+        return CrowdFundContract(currentCrowdFundContractAddress).requestFundsStarted();
+    }
+
+    // helper function that checks when request funds phase ended
+    function requestFundsEnded() external view returns(bool) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to request Funds Ended
+        return CrowdFundContract(currentCrowdFundContractAddress).requestFundsEnded();
+    }
+
+    // helper function that checks when crowd fund starts
+    function crowdFundStarted() external view returns(bool) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to crowdFundStarted method
+        return CrowdFundContract(currentCrowdFundContractAddress).crowdFundStarted();
+    }
+
+    // helper function that checks when crowd fund ends
+    function crowdFundEnded() external view returns(bool) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to crowdFundEnded method
+        return CrowdFundContract(currentCrowdFundContractAddress).crowdFundEnded();
+    }
+
+    // helper function to compute how much time is left for request funds phase
+    function getTimeLeftRequestFunds() external view returns(uint256) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to get Time Left Request funds
+        return CrowdFundContract(currentCrowdFundContractAddress).getTimeLeftRequestFunds();
+    }
+
+    // helper function to compute how much time is left for crowd fund
+    function getTimeLeftCrowdFund() external view returns(uint256) {
+        // call to get Time Left Request funds
+        return currentCrowdFundContract.getTimeLeftCrowdFunds();
+    }
 
     // set the price feed contract of the roundId => crowd fund contract
-    function setPriceFeedContract(address _token, address _priceFeed, uint256 _roundId) public onlyOwner {
-        // we require that the given round id is valid 
-        if (_roundId > _currentRoundId) {
-            revert invalidRoundId();
-        }
-        address crowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_roundId];
-        CrowdFundContract crowdFundContract = CrowdFundContract(crowdFundContractAddress);
-        crowdFundContract.setPriceFeedContract(_token, _priceFeed);
+    function setPriceFeedContract(address _token, address _priceFeed) public onlyOwner {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to setPriceFeedContract
+        CrowdFundContract(currentCrowdFundContractAddress).setPriceFeedContract(_token, _priceFeed);
+    }
+
+    // get the price feed contract of the roundId => crowd fund contract
+    function getTokenPrice(address _token) public returns(uint256)  {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to getTokenPrice
+        return CrowdFundContract(currentCrowdFundContractAddress).getTokenPrice(_token);
+    }
+
+    // fund creator contract for roundId => crowd fund contract 
+    function fund(address _wallet) nonReentrant public payable {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to fund creator method
+        CrowdFundContract(currenCrowdFundContractAddress).fund(_wallet);
+    }
+
+    // helper function to check if a given token address is allowed by the protocol
+    // TODO: do we need this method ? 
+    function isTokenAllowed(address _address) private returns(bool) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to isTokenAllowed method
+        return CrowdFundContract(currentCrowdFundContractAddress).isTokenAllowed(_address);
+    }
+    
+    // function to request funds 
+    function requestFunds(uint256 _amount, string calldata _uri) public {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to requestFunds method
+        CrowdFundContract(currentCrowdFundContractAddress).requestFunds(_amount, _uri);
     }
 
     // make a creator elligible for roundId => crowd fund contract 
-    function makeCreatorElligible(address _wallet, uint256 _roundId) public onlyOwner {
-        // we require that the given round id is valid 
-        if (_roundId > _currentRoundId) {
-            revert invalidRoundId();
-        }
-        address crowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_roundId];
-        CrowdFundContract crowdFundContract = CrowdFundContract(crowdFundContractAddress);
-        crowdFundContract.makeCreatorElligible(_wallet);
+    function makeCreatorElligible(address _wallet, uint256 _roundId) external onlyOwner {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to make creator elligible
+        CrowdFundContract(currentCrowdFundContractAddress).makeCreatorElligible(_wallet);
+    }  
+
+    // function that returns total funds creator obtained until the current block timestamp
+    function computeTotalFunds(address _wallet) public returns(uint256) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to compute total funds
+        return CrowdFundContract(currentCrowdFundContractAddress).computeTotalFunds(_wallet);
+    }
+
+    // returns requested funds from creator
+    function computeRequestedFunds(address _wallet) public returns(uint256) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to compute request funds
+        return CrowdFundContract(currentCrowdFundContractAddress).computeRequestedFunds(_wallet);
+    }
+
+    // returns true if creators obtained more crowd funds than his requested amount
+    function creatorProjectApproved(address _wallet) public returns(bool) {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to creator project approved
+        return CrowdFundContract(currentCrowdFundContractAddress).creatorProjectApproved(_wallet);
     }
 
     // fund creators for roundId => crowd fund contract
-    function fundCreators(address _wallet, uint256 _roundId) payable onlyOwner public {
-        // we require that the given round id is valid
-        if (_roundId > _currentRoundId) {
-            revert invalidRoundId();
-        }
-        address crowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_roundId];
-        CrowdFundContract crowdFundContract = CrowdFundContract(crowdFundContractAddress);
-        crowdFundContract.fundCreators(_wallet);
+    function fundCreators(address _wallet) payable onlyOwner public {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to fund creators method
+        CrowdFundContract(currentCrowdFundContractAddress).fundCreators(_wallet);
     }
 
     // refund users for roundId => crowd fund contract
-    function refundUsers(uint256 _roundId) payable onlyOwner public {
-        // we require that the given round id is valid 
-        if (_roundId > _currentRoundId) {
-            revert invalidRoundId();
-        }
-        address crowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_roundId];
-        CrowdFundContract crowdFundContract = CrowdFundContract(crowdFundContractAddress);
-        crowdFundContract.refundUsers();
+    function refundUsers() payable onlyOwner public {
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // call to refund users method
+        CrowdFundContract(currentCrowdFundContractAddress).refundUsers();
     }
 
     // fund meta nft minting contract for roundId => crowd fund contract
-    function fundMetaNFTMintContract(
-        address creatorAddress, 
-        address payable metaNFTMintContractAddress,
-        uint256 _roundId
-    ) 
-        payable 
-        onlyOwner 
-        public 
-    {   
-        // we require that the given round id is valid 
-        if (_roundId > _currentRoundId) {
-            revert invalidRoundId();
+    function fundMetaNFTMintContract() payable onlyOwner external {   
+        // get current crowd fund contract address
+        address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // get current crowd fund contract
+        CrowdFundContract currentCrowdFundContract = CrowdFundContract(currentCrowdFundContractAddress);
+        // require that current crowd fund has already finished
+        require(currentCrowdFundContract.crowdFundEnded(), "crowd fund has not yet finished");
+        // get creator address array from current crowd fund contract
+        address[] creatorsAddressArray = currentCrowdFundContract.creatorsAddressArray;
+        // get current nft minting contract address
+        address currentNFTMintingContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
+        // get current nft minting contract
+        NFTMintingContract currentNFTMintingContract = NFTMintingContract(currentNFTMintingContractAddress);
+        
+        for (uin256 index; index < creatorsAddressArray.length; index++) {
+            address creatorAddress = creatorsAddressArray[index];
+            Creator creatorStruct = currentCrowdFundContract.addressToCreatorMapping[creatorAddress];
+            uri = creatorStruct.uri;
+            creatorAddressToURIMapping[creatorAddress] = uri;
+            
+            currentCrowdFundContract.fundNFTMintContract(creatorAddress, currentNFTMintContractAddress);
+            currentNFTMintingContract.creatorAddressToTotalFunds[creatorAddress] = creatorStruct.totalFunds;
         }
-        address crowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_roundId];
-        CrowdFundContract crowdFundContract = CrowdFundContract(crowdFundContractAddress);
-        crowdFundContract.fundMetaNFTMintContract(creatorAddress, metaNFTMintContractAddress);
+
+        roundIdToNFTHasBeenMinted[_currentRoundId] = true;
+    }
+
+    // mint creator's nfts for roundId => nft minting contract
+    function mintNFTPerContract() onlyOwner external {
+        // require that nft minting contract has been funded
+        require(roundIdToNFTHasBeenMinted[_currentRoundId], "nft minting contract hasn't been funded yet");
+        // get current nft minting conttract address
+        address currentNFTMintingContractAddress = roundIdToNFTMintingContractAddressMapping[_currentRoundId];
+        // get current nft minting contract
+        NFTMintingContract currentNFTMintingContract = NFTMintingContract(currentNFTMintingContractAddress);
+        
     }
 }
