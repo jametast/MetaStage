@@ -27,27 +27,43 @@ contract CrowdFundContract is
     OwnableUpgradeable, 
     ReentrancyGuardUpgradeable 
 {
-    
-    // user structure, it encapsulates user public key, 
-    // the total amount of funds he locked in our smart contract
-    // which ERC20 token user used
-    // which creator did user vote for
+
+    // structs 
+
+    /**
+     * user structure, it encapsulates user public key, 
+     * the total amount of funds he locked in our smart contract
+     * which ERC20 token user used
+     * which creator did user vote for
+     */ 
+
     struct User {
         address payable wallet;
         uint256 totalLockedAmount;
         address tokenFund;
         address creatorWallet;
+        nftThreshold threshold;
     }
 
-    // creator structure, it encapsulates creator public key,
-    // the total amount of funds requested
-    // how much tokens did creator already obtained (at a given time)
-    // which users did vote for creator
+    /**
+     * creator structure, it encapsulates creator public key,
+     * the total amount of funds requested
+     * how much tokens did creator already obtained (at a given time)
+     * which users did vote for creator
+     */ 
+
     struct Creator {
         address payable wallet;
         uint256 requestedFunds;
         uint256 totalFunds;
         string uri;
+    }
+
+    // enums
+    enum nftThreshold {
+        lowerThreshold,
+        midThreshold,
+        upperThreshold
     }
 
     // immutable state variables
@@ -58,8 +74,12 @@ contract CrowdFundContract is
     uint256 public immutable endTimeCrowdFund;        // endind time that users can lock funds and vote for their favorite creator
 
     // state variables
+    
+    // arrays
     User[] internal usersArray;                                                     // array of all users
-    address[] public creatorsAddressArray;                                        // array of all creator's addresses
+    address[] public creatorsAddressArray;                                          // array of all creator's addresses
+
+    // mappings'
     mapping(address => bool) public creatorsMapping;                                // mapping to store creators
     mapping(address => address payable[]) public creatorAddressToFanClubMapping;    // mapping from creator pubkey to array of fan's pubkeys
     mapping(address => address) public userAddressToCreatorAddressMapping;          // mapping user pubkey => creator pubkey
@@ -71,6 +91,7 @@ contract CrowdFundContract is
     mapping(address => address) public tokenPriceFeedMapping;                       // mapping that associates to each token address its Chainlink V3Aggregator price feed
     mapping(address => bool) public creatorGotFundedMapping;                        // mapping that keeps track if a creator already got funded
     mapping(address => address) public creatorAddressToNFTMintContractAddress;      // mapping that maps a creator address to its associated meta nft minting contract
+    mapping(address => uint256[3]) private creatorAddressToNFTThresholdMapping;     // mapping from creator address to corresponding threshold nft mints
 
     // events
     event CreatorGotFunds(address creatorWallet);       // log event of Creator having obtained necessary funds
@@ -82,11 +103,13 @@ contract CrowdFundContract is
     // receive function
     receive() external payable {}
 
-    // Create a programatic crow fund smart contract
-    // creators can first request funds to realize their projects
-    // users can lock funds into our smart contract and associate these funds with creators
-    // after crowd funded has ended, funds will be distributed among creators that obtained
-    // sufficiently enough funds (meaning, users backing such creator contributed more than the total requested amount by creator)
+    /** 
+     * Create a programatic crow fund smart contract
+     * creators can first request funds to realize their projects
+     * users can lock funds into our smart contract and associate these funds with creators
+     * after crowd funded has ended, funds will be distributed among creators that obtained
+     * sufficiently enough funds (meaning, users backing such creator contributed more than the total requested amount by creator)
+     */ 
 
     function initialize(
         uint256 _minFundValue, 
@@ -95,12 +118,16 @@ contract CrowdFundContract is
         uint256 _endTimeRequestFunds,
         uint256 _startTimeCrowdFund,
         uint256 _endTimeCrowdFund
-    )  public initializer {
-        // Why use initialize function instead of an actual constructor ? 
-        // We need to add this init call method that simulates a constructor function, but
-        // in this case is used by clones of an initial CrowdFundContract, this will allow us to deploy
-        // new crowd fund rounds in a more gas efficient way
-        
+    )  public 
+       initializer
+    {   
+        /**
+         * Why use initialize function instead of an actual constructor ? 
+         * We need to add this init call method that simulates a constructor function, but
+         * in this case is used by clones of an initial CrowdFundContract, this will allow us to deploy
+         * new crowd fund rounds in a more gas efficient way
+         */ 
+
         // initialize both Ownable and Reentrancy Guard upgradeable contracts
         OwnableUpgradeable.__Ownable_init();
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
@@ -187,11 +214,12 @@ contract CrowdFundContract is
         (, int256 price,,,) = priceFeed.latestRoundData();
         return uint256(price);
     }
-
-    // a user is allowed to lock a certain amount of available ERC20 tokens 
-    // and associate such funds to a given creator. This amount is locked into
-    // the current contract until crowd fund is over. 
-    // We need OpenZeppelin nonReentrant safety guard against possible reentrant attacks 
+    /** 
+     * a user is allowed to lock a certain amount of available ERC20 tokens 
+     * and associate such funds to a given creator. This amount is locked into
+     * the current contract until crowd fund is over. 
+     * We need OpenZeppelin nonReentrant safety guard against possible reentrant attacks 
+     */
     function fund(address _wallet) nonReentrant external payable {
         // require that we are into the crowd fund period
         require(startTimeCrowdFund < block.timestamp && block.timestamp < endTimeCrowdFund, "Not in crowd fund phase");
@@ -209,17 +237,45 @@ contract CrowdFundContract is
 
         // define the creator value
         Creator memory creator = addressToCreatorMapping[_wallet];
+
+        /**
+         * Logic to compute creator threshold mint NFT, that will be then used 
+         * by the NFT minting contract to mint the correct associated NFT
+         */
+
+        uint256 value = msg.value;
+        uint256[3] calldata threholdsArray = creatorAddressToNFTThresholdMapping[_wallet];
+        nftThreshold threhold;
+
+        if (value <= thresholdsArray[0]) {
+            threshold = nftThreshold.lowerThreshold;
+        } else if (thresholdsArray[0] < value && value <= threhsoldsArray[1]) {
+            threshold = nftThreshold.midThreshold;
+        } else {
+            threhold = nftThreshold.upperThreshold;
+        }
+        
         // Encapsulate data into a User structure
-        User memory user = User(payable(msg.sender), uint256(msg.value), address(0), _wallet); // since we are transferring ETH in this fund overload method, we use the null address `address(0)`
+        User memory user = User(
+            payable(msg.sender), 
+            uint256(msg.value), 
+            address(0), 
+            _wallet, 
+            threshold
+        ); // since we are transferring ETH in this fund overload method, we use the null address `address(0)`
+
         // address to user mapping is updated
         addressToUserMapping[msg.sender] = user;
 
-        // Lock funds from user into the current smart contract
-        // Locked funds will correspond to the value of msg.value
-        // however the amount funded to given creator corresponds to msg.value - minFundValue
-        // These funds will be then distributed to the chosen creator, given that creator obtained enough funds
-        // we require that the transaction was correctly processed
-    
+        
+        /**
+         * Lock funds from user into the current smart contract
+         * Locked funds will correspond to the value of msg.value
+         * however the amount funded to given creator corresponds to msg.value - minFundValue
+         * These funds will be then distributed to the chosen creator, given that creator obtained enough funds
+         * we require that the transaction was correctly processed
+         */
+
         // user data is pushed to usersArray
         usersArray.push(user);
 
@@ -301,13 +357,25 @@ contract CrowdFundContract is
      * by requiring creators to (partially) mint NFTs art cover to the platform, as well
      * as detailed description of the project working on
      */
-    function requestFunds(uint256 _amount, string calldata _uri) public {
+    function requestFunds(
+        uint256 _amount, 
+        string calldata _uri, 
+        uint256 lowerThreshold, 
+        uint256 midThreshold, 
+        uint256 upperThreshold
+    ) 
+        public 
+    {
         // require that funds are requested between startTimeRequestFunds and endTimeRequestFunds period
         require(startTimeRequestFunds <= block.timestamp && block.timestamp <= endTimeRequestFunds, "Out of request funds phase");
         // require minimum fund value
         require(_amount > minFundValue, "Requested amount must be bigger than minimum fundable value");
         // check if creator is elligible, that is it already minted NFT art cover on platform, etc
         require(elligibleCreatorsAddressMapping[msg.sender], "Creator is not elligible to request funds");
+        // check that lowerThreshold <= midThrehold
+        require(lowerThreshold <= midThreshold, "invalid lower/middle thresholds");
+        // check that midThreshold <= upperThreshold
+        require(midThreshold <= upperThreshold, "invalid middle/upper thresholds");
         
         // update creatorsMapping to true on current creator wallet
         creatorsMapping[msg.sender] = true;
@@ -315,6 +383,8 @@ contract CrowdFundContract is
         Creator memory creator = Creator(payable(msg.sender), _amount, 0, _uri); // when requesting funds, we assume it is the first time creator does so, therefore its total funded value should be 0
         // update addressToCreatorMapping
         addressToCreatorMapping[msg.sender] = creator;
+        // update threshold
+        creatorAddressToNFTThresholdMapping[msg.sender] = [lowerThreshold, midThreshold, upperThreshold];
     }
 
     // This function should only be called by the owner of the platform
@@ -425,6 +495,22 @@ contract CrowdFundContract is
                     // transfer funds back to user
                     token.transferFrom(address(this), wallet, user.totalLockedAmount);
                 }
+            }
+        }
+    }
+
+    function getFundedCreatorsArray() 
+        external 
+        view 
+        onlyOwner 
+        returns(address[] memory fundedCreatorsAddressArray) 
+    {
+        address memory fundedCreatorsAddressArray;
+
+        for(uint256 i; i < creatorsAddressArray.length; i++) {
+            address creatorAddress = creatorsAddressArray[i];
+            if (creatorGotFundedMapping[creatorAddress]) {
+                fundedCreatorsAddressArray.push(creatorAddress);
             }
         }
     }

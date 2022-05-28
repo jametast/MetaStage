@@ -39,7 +39,7 @@ contract MetaCreatorsContract is Ownable {
         address _nftMintingContractAddress
     ) 
         onlyOwner 
-        public
+        external
     {
         // no contract deployed yet, therefore we initialize the current round id to 0
         _currentRoundId = 0;
@@ -318,7 +318,7 @@ contract MetaCreatorsContract is Ownable {
     }
 
     // fund meta nft minting contract for roundId => crowd fund contract
-    function fundMetaNFTMintContract() payable onlyOwner external {   
+    function fundNFTMintContract() payable onlyOwner external {   
         // get current crowd fund contract address
         address currentCrowdFundContractAddress = roundIdToCrowdFundContractAddressMapping[_currentRoundId];
         // get current crowd fund contract
